@@ -1,0 +1,333 @@
+# 🚀 BARISTA BUILD INSTRUCTIONS
+## Monday Trade AI Assistant - Full Production Build
+
+Copy and paste this entire document into your new Replit project to build the complete Barista system.
+
+---
+
+## 📋 PROJECT OVERVIEW
+
+Build **Barista** - Monday Trade's AI-powered chat assistant with:
+- **Grok API** (`grok-4-1-fast`) for LLM with native X search & web search
+- **Pinecone** for vector storage (RAG)
+- **Redis/Upstash** for caching
+- **Monday Trade API** for live trading data
+- **React** frontend with purple Monday Trade branding
+
+---
+
+## 🏗️ ARCHITECTURE
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                           BARISTA ARCHITECTURE                              │
+├─────────────────────────────────────────────────────────────────────────────┤
+│  ┌─────────────┐     ┌─────────────┐     ┌──────────────────────────────┐  │
+│  │  Frontend   │────▶│   Backend   │────▶│        Grok API              │  │
+│  │  (React)    │     │  (Express)  │     │  + web_search + x_search     │  │
+│  └─────────────┘     └──────┬──────┘     └──────────────────────────────┘  │
+│                             │                                               │
+│         ┌───────────────────┼───────────────────┐                          │
+│         ▼                   ▼                   ▼                          │
+│  ┌─────────────┐     ┌─────────────┐     ┌─────────────┐                   │
+│  │  Pinecone   │     │   Redis     │     │ Monday API  │                   │
+│  │  Vector DB  │     │   Cache     │     │ Live Data   │                   │
+│  └─────────────┘     └─────────────┘     └─────────────┘                   │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 🔑 REQUIRED API KEYS
+
+You will need these secrets configured:
+
+```bash
+# Grok API (xAI)
+XAI_API_KEY=xai-...
+
+# Pinecone (Vector DB for RAG)
+PINECONE_API_KEY=...
+PINECONE_INDEX=barista-knowledge
+
+# OpenAI (for embeddings only)
+OPENAI_API_KEY=sk-...
+
+# Upstash Redis (caching)
+UPSTASH_REDIS_REST_URL=https://...
+UPSTASH_REDIS_REST_TOKEN=...
+
+# Monday Trade API
+MONDAY_API_KEY=ed1190b7c4aed9a515015425e3d24b3b
+MONDAY_SECRET_KEY=373b3c3f8233c4ef13d7c5765b9cfe78
+MONDAY_PASSPHRASE=6fbb7707c86de67e
+MONDAY_API_URL=https://api.monday.trade/v4/public/mm
+```
+
+---
+
+## 📁 PROJECT STRUCTURE TO CREATE
+
+```
+barista/
+├── server/
+│   ├── index.ts              # Express server entry
+│   ├── routes/
+│   │   ├── chat.ts           # Chat API endpoints
+│   │   └── health.ts         # Health check endpoints
+│   └── services/
+│       ├── grok.ts           # Grok API service with X/web search
+│       ├── vectorStore.ts    # Pinecone RAG service
+│       ├── mondayApi.ts      # Monday Trade API integration
+│       └── cache.ts          # Redis/Upstash cache service
+├── client/
+│   └── src/
+│       ├── components/
+│       │   ├── BaristaChat.tsx    # Main chat widget
+│       │   ├── Message.tsx        # Message bubble component
+│       │   ├── BaristaAvatar.tsx  # Animated coffee cup avatar
+│       │   └── SuggestionPill.tsx # Quick action pills
+│       ├── lib/
+│       │   └── api.ts             # API client
+│       └── pages/
+│           └── home.tsx           # Landing page with chat
+├── scripts/
+│   └── ingest-docs.ts        # Documentation indexer for Pinecone
+└── package.json
+```
+
+---
+
+## 🎨 BRAND COLORS (Monday Trade Purple Theme)
+
+```typescript
+const BRAND = {
+  purple: '#9945FF',
+  purpleLight: '#B87AFF',
+  purpleDark: '#7B2FE0',
+  purpleGlow: 'rgba(153, 69, 255, 0.3)',
+  teal: '#14F195',
+  dark: '#0E0E1A',
+  darkCard: '#1A1A2E',
+  gray: '#8892B0',
+  white: '#FFFFFF',
+};
+```
+
+---
+
+## 🧠 GROK SYSTEM PROMPT
+
+```typescript
+const SYSTEM_PROMPT = `You are Barista ☕, Monday Trade's friendly AI assistant.
+
+PERSONALITY:
+- Warm, helpful, energetic, knowledgeable
+- Use emojis naturally (☕ 🚀 ✨ 💜 📈)
+- Concise but thorough (<150 words)
+- Encouraging to new traders
+- Coffee-themed personality
+
+RULES:
+1. Answer from documentation and search results
+2. Use web_search for docs.monday.trade and monday.trade/blog
+3. Use x_search to find @MondayTrade_ announcements and community sentiment
+4. Never invent information—admit limits
+5. No financial advice ("DYOR", "not financial advice")
+6. Bold **key terms** and numbers
+7. Cite sources when using search
+8. For user-specific data (positions, balances), explain they need to connect wallet
+
+KEY FACTS:
+- NO invite code needed - open access
+- NO KYC required
+- Max leverage: 10x
+- Fees: 0.02% market, 0.00% limit
+- Pairs: BTC/USDC, ETH/USDC, MON/USDC
+
+RESPONSE STYLE:
+- Start with friendly opener ("Coming right up! ☕", "Great question!", "Here's the brew...")
+- End with helpful closer ("Hope that helps!", "Any other questions?", "Happy trading! 🚀")`;
+```
+
+---
+
+## 📡 API ENDPOINTS TO BUILD
+
+### POST /api/chat
+Standard chat endpoint with RAG context
+
+```typescript
+// Request
+{
+  "message": "What is Monday Trade?",
+  "history": [],
+  "walletAddress": "0x..." // optional
+}
+
+// Response
+{
+  "response": "Coming right up! ☕ Monday Trade is...",
+  "citations": [],
+  "toolsUsed": { "web_search": 1 }
+}
+```
+
+### POST /api/chat/stream
+Streaming chat with Server-Sent Events (SSE)
+
+### GET /api/chat/suggestions
+Returns suggestion pills for the UI
+
+### GET /api/health
+Health check endpoint
+
+---
+
+## 💡 SUGGESTION PILLS
+
+```typescript
+const suggestions = [
+  { text: 'What is Monday Trade?', emoji: '🚀' },
+  { text: 'Do I need an invite code?', emoji: '🔑' },
+  { text: 'Trading fees?', emoji: '💰' },
+  { text: 'Latest announcements', emoji: '📢' },
+  { text: 'How to set stop loss?', emoji: '🛡️' },
+  { text: 'Voyage Points?', emoji: '⭐' },
+  { text: 'Max leverage?', emoji: '📊' },
+  { text: 'Supported wallets?', emoji: '👛' },
+];
+```
+
+---
+
+## 📚 KNOWLEDGE BASE FOR RAG
+
+Index these Monday Trade documentation pages into Pinecone:
+
+1. https://docs.monday.trade/ - What is Monday Trade
+2. https://docs.monday.trade/introduction/why-monad - Why Monad
+3. https://docs.monday.trade/introduction/how-to-start-trading-on-monday-trade - Getting Started
+4. https://docs.monday.trade/perps-trading/perps-protocol-mechanics - Perps Mechanics
+5. https://docs.monday.trade/perps-trading/perps-order-types-and-matching - Order Types
+6. https://docs.monday.trade/perps-trading/perps-funding-rate - Funding Rate
+7. https://docs.monday.trade/perps-trading/perps-liquidation-engine - Liquidation Engine
+8. https://docs.monday.trade/perps-trading/perps-contract-specifications-and-fees - Fees & Specs
+9. https://docs.monday.trade/perps-trading/perps-sdk-and-api - SDK & API
+10. https://docs.monday.trade/general/faqs/general - General FAQ
+11. https://docs.monday.trade/general/faqs/trading - Trading FAQ
+12. https://docs.monday.trade/general/voyage-point-program - Voyage Points
+
+---
+
+## 🎯 MANUAL KNOWLEDGE ENTRIES (Always Include)
+
+```typescript
+const MANUAL_KNOWLEDGE = [
+  {
+    id: 'manual-access',
+    content: `Monday Trade Access: NO invite code required - fully open access. NO KYC needed - permissionless. Supported wallets: MetaMask, WalletConnect, Rabby, Phantom, Backpack, HaHa, OKX.`,
+  },
+  {
+    id: 'manual-fees',
+    content: `Trading Fees: Market orders 0.02%, Limit orders 0.00% (maker rebate), Execution fee 0.01 USDC.`,
+  },
+  {
+    id: 'manual-leverage',
+    content: `Leverage: Max 10x for all pairs. IMR 10%, MMR 5%. Pairs: BTC/USDC, ETH/USDC, MON/USDC.`,
+  },
+  {
+    id: 'manual-voyage',
+    content: `Voyage Points: 2,000,000 points weekly, 24 weeks. Earn via trading, LP, holding, referrals (20% bonus).`,
+  },
+];
+```
+
+---
+
+## 🚀 BUILD STEPS
+
+1. **Set up Express backend** with TypeScript
+2. **Create Grok service** using OpenAI SDK with xAI base URL
+3. **Set up Pinecone** for vector storage with OpenAI embeddings
+4. **Create Redis cache** using Upstash
+5. **Build Monday Trade API client** with HMAC authentication
+6. **Create chat routes** with standard and streaming endpoints
+7. **Build React frontend** with purple Monday Trade branding
+8. **Create BaristaAvatar** - animated coffee cup SVG with steam
+9. **Build chat widget** with message bubbles, typing indicator, feedback buttons
+10. **Add suggestion pills** for quick actions
+11. **Run documentation ingestion** to populate Pinecone
+12. **Test end-to-end** with real Grok API calls
+
+---
+
+## 📦 REQUIRED PACKAGES
+
+### Backend
+```json
+{
+  "@pinecone-database/pinecone": "^2.2.0",
+  "@upstash/redis": "^1.28.0",
+  "cors": "^2.8.5",
+  "dotenv": "^16.3.1",
+  "express": "^4.18.2",
+  "express-rate-limit": "^7.1.5",
+  "helmet": "^7.1.0",
+  "openai": "^4.28.0"
+}
+```
+
+### Frontend
+```json
+{
+  "react": "^18.2.0",
+  "framer-motion": "^10.0.0",
+  "lucide-react": "^0.300.0"
+}
+```
+
+---
+
+## ✅ SUCCESS CRITERIA
+
+- [ ] Chat responds with Barista personality
+- [ ] Grok uses web_search for documentation queries
+- [ ] Grok uses x_search for @MondayTrade_ announcements
+- [ ] RAG retrieves relevant docs from Pinecone
+- [ ] Live market data from Monday Trade API
+- [ ] Responses stream in real-time
+- [ ] Common queries are cached in Redis
+- [ ] Purple Monday Trade branding throughout
+- [ ] Animated BaristaAvatar with steam effects
+- [ ] Suggestion pills for quick actions
+- [ ] Feedback buttons (thumbs up/down) on responses
+
+---
+
+## 🎨 UI FEATURES
+
+1. **Floating chat bubble** - Purple with sparkle animation
+2. **Chat window** - Dark theme with purple accents
+3. **BaristaAvatar** - Animated coffee cup with face and steam
+4. **Message bubbles** - User (purple gradient), Assistant (dark card)
+5. **Typing indicator** - "Brewing your answer" with bouncing dots
+6. **Tool indicators** - Show when searching X or web
+7. **Source citations** - Links to docs/tweets used
+8. **Suggestion pills** - Quick action buttons
+9. **Feedback buttons** - Thumbs up/down on assistant messages
+
+---
+
+## 🔗 REFERENCE LINKS
+
+- Monday Trade App: https://app.monday.trade
+- Monday Trade Docs: https://docs.monday.trade
+- Monday Trade API: https://developers.monday.trade
+- xAI/Grok Docs: https://docs.x.ai
+- Pinecone Docs: https://docs.pinecone.io
+- Upstash Docs: https://docs.upstash.com
+
+---
+
+**Ready to build! Start by setting up the Express backend with the Grok service, then build out the frontend with the purple Monday Trade branding.**
