@@ -40,3 +40,12 @@ waitForPort = 5000
 
 [agent]
 integrations = ["javascript_xai:1.0.0"]
+
+[userenv]
+
+[userenv.shared]
+MONDAY_API_KEY = "ed1190b7c4aed9a515015425e3d24b3b"
+MONDAY_SECRET_KEY = "373b3c3f8233c4ef13d7c5765b9cfe78"
+MONDAY_PASSPHRASE = "6fbb7707c86de67e"
+MONDAY_API_URL = "https://api.monday.trade/v4/public/mm"
+PINECONE_INDEX = "barista-knowledge"
