@@ -9,7 +9,7 @@ interface FeedbackButtonsProps {
 
 export function FeedbackButtons({ messageId, currentFeedback, onFeedback }: FeedbackButtonsProps) {
   return (
-    <div className="flex items-center gap-1 mt-2" data-testid="feedback-buttons">
+    <div className="flex items-center gap-1 mt-2" data-testid={`feedback-buttons-${messageId}`}>
       <motion.button
         type="button"
         onClick={() => onFeedback(messageId, "positive")}
@@ -21,7 +21,7 @@ export function FeedbackButtons({ messageId, currentFeedback, onFeedback }: Feed
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.95 }}
         aria-label="Helpful response"
-        data-testid="feedback-positive"
+        data-testid={`button-feedback-positive-${messageId}`}
       >
         <ThumbsUp className="w-3.5 h-3.5" />
       </motion.button>
@@ -36,7 +36,7 @@ export function FeedbackButtons({ messageId, currentFeedback, onFeedback }: Feed
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.95 }}
         aria-label="Not helpful response"
-        data-testid="feedback-negative"
+        data-testid={`button-feedback-negative-${messageId}`}
       >
         <ThumbsDown className="w-3.5 h-3.5" />
       </motion.button>

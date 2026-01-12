@@ -159,6 +159,18 @@ No hero images needed—this is a focused chat widget interface.
 - Screen reader announcements for new messages
 - Color contrast: WCAG AA compliant (white text on dark backgrounds)
 
+## Emoji Usage (Project Exemption)
+**Note**: This project has an explicit exemption from the "no emoji" universal design guideline.
+
+Per the user's build instructions, the Barista AI personality requires natural emoji usage:
+- Coffee cup branding: ☕
+- Enthusiasm indicators: 🚀 ✨ 💜 📈
+- Suggestion pill icons
+- Tool usage indicators (🔍 for search, 🐦 for X/Twitter)
+- Typing indicator: "Brewing your answer ☕"
+
+This is a documented design decision for the coffee-themed Barista character.
+
 ## Quality Standards
 - Pixel-perfect spacing using Tailwind primitives
 - Smooth 60fps animations via framer-motion

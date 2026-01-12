@@ -38,8 +38,9 @@ export function FloatingChatBubble({ isOpen, onClick, hasUnread = false }: Float
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
           className="absolute -top-1 -right-1 w-4 h-4 bg-chart-2 rounded-full flex items-center justify-center"
+          data-testid="unread-indicator"
         >
-          <span className="w-2 h-2 bg-white rounded-full" />
+          <span className="w-2 h-2 bg-white rounded-full" data-testid="unread-indicator-dot" />
         </motion.span>
       )}
     </motion.button>
