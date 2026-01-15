@@ -1,13 +1,10 @@
 import { Pinecone } from "@pinecone-database/pinecone";
-import OpenAI from "openai";
 
 const PINECONE_INDEX_NAME = process.env.PINECONE_INDEX || "barista-knowledge";
-const EMBEDDING_MODEL = "text-embedding-3-small";
 const TOP_K = 5;
 const MIN_SCORE = 0.7;
 
 let pineconeClient: Pinecone | null = null;
-let openaiClient: OpenAI | null = null;
 
 const MANUAL_KNOWLEDGE = [
   {
@@ -367,37 +364,8 @@ function getPineconeClient(): Pinecone | null {
   return pineconeClient;
 }
 
-function getOpenAIClient(): OpenAI | null {
-  if (!process.env.OPENAI_API_KEY) {
-    return null;
-  }
-
-  if (!openaiClient) {
-    openaiClient = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY,
-    });
-  }
-
-  return openaiClient;
-}
-
 async function generateEmbedding(text: string): Promise<number[] | null> {
-  const openai = getOpenAIClient();
-  if (!openai) {
-    console.log("⚠️ OpenAI not configured for embeddings");
-    return null;
-  }
-
-  try {
-    const response = await openai.embeddings.create({
-      model: EMBEDDING_MODEL,
-      input: text,
-    });
-    return response.data[0].embedding;
-  } catch (error) {
-    console.error("❌ Embedding error:", error);
-    return null;
-  }
+  return null;
 }
 
 const DEFAULT_OVERVIEW = `Monday Trade is Monad's native spot and perps DEX - a decentralized perpetual futures and spot trading platform. Key facts:
@@ -512,7 +480,7 @@ export async function healthCheck(): Promise<boolean> {
 }
 
 export function isConfigured(): boolean {
-  return !!process.env.PINECONE_API_KEY && !!process.env.OPENAI_API_KEY;
+  return !!process.env.PINECONE_API_KEY && !!process.env.XAI_API_KEY;
 }
 
 export async function getVectorCount(): Promise<number> {

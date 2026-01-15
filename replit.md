@@ -55,16 +55,17 @@ Barista is an AI-powered chat assistant for Monday Trade, a decentralized perpet
 7. **Dark/Light Theme** - Toggle between modes
 
 ## Environment Variables Required
-- `XAI_API_KEY` - Grok API key
-- `PINECONE_API_KEY` - Pinecone vector DB
+- `XAI_API_KEY` - Grok API key (powers both chat and live search)
+- `PINECONE_API_KEY` - Pinecone vector DB (optional, uses manual knowledge if not set)
 - `PINECONE_INDEX` - Index name (barista-knowledge)
-- `OPENAI_API_KEY` - For embeddings
 - `UPSTASH_REDIS_REST_URL` - Redis URL
 - `UPSTASH_REDIS_REST_TOKEN` - Redis token
-- `MONDAY_API_KEY` - Monday Trade API
-- `MONDAY_SECRET_KEY` - HMAC secret
-- `MONDAY_PASSPHRASE` - API passphrase
-- `MONDAY_API_URL` - API base URL
+- `MONDAY_API_KEY` - Monday Trade API (optional)
+- `MONDAY_SECRET_KEY` - HMAC secret (optional)
+- `MONDAY_PASSPHRASE` - API passphrase (optional)
+- `MONDAY_API_URL` - API base URL (optional)
+
+Note: OpenAI API key is no longer required - the app uses Grok for all AI features and manual knowledge for RAG.
 
 ## Recent Changes
 - **Jan 15, 2026**: Fixed live search - switched from invalid tool types to xAI's `search_parameters` API for real-time X/Twitter and web search
