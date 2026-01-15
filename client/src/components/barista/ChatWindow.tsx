@@ -1,8 +1,7 @@
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useLayoutEffect } from "react";
 import { X, Sparkles } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { BaristaAvatar } from "./BaristaAvatar";
 import { Message } from "./Message";
 import { ChatInput } from "./ChatInput";
@@ -31,13 +30,36 @@ export function ChatWindow({
   isLoading,
   toolInUse,
 }: ChatWindowProps) {
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const bottomAnchorRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+  const scrollToBottom = () => {
+    if (bottomAnchorRef.current) {
+      bottomAnchorRef.current.scrollIntoView({ behavior: "auto", block: "end" });
     }
-  }, [messages, isLoading]);
+  };
+
+  // Use useLayoutEffect for immediate scroll before paint
+  useLayoutEffect(() => {
+    scrollToBottom();
+  }, [messages.length, isLoading]);
+
+  // Also scroll with requestAnimationFrame to handle post-render updates
+  useEffect(() => {
+    const rafId = requestAnimationFrame(() => {
+      scrollToBottom();
+      // Second RAF for layout shifts from animations
+      requestAnimationFrame(scrollToBottom);
+    });
+    
+    // Fallback timeout for Framer Motion animations
+    const timeoutId = setTimeout(scrollToBottom, 350);
+    
+    return () => {
+      cancelAnimationFrame(rafId);
+      clearTimeout(timeoutId);
+    };
+  }, [messages.length, isLoading]);
 
   return (
     <AnimatePresence>
@@ -92,8 +114,12 @@ export function ChatWindow({
             </Button>
           </motion.div>
 
-          <ScrollArea className="flex-1 p-4" ref={scrollRef}>
-            <div className="flex flex-col gap-3">
+          <div 
+            ref={scrollContainerRef}
+            className="flex-1 overflow-y-auto p-4"
+            data-testid="chat-messages-scroll"
+          >
+            <div className="flex flex-col gap-4">
               {messages.length === 0 && (
                 <motion.div 
                   initial={{ opacity: 0, scale: 0.95 }}
@@ -123,6 +149,7 @@ export function ChatWindow({
                     stiffness: 400,
                     damping: 25
                   }}
+                  onAnimationComplete={index === messages.length - 1 ? scrollToBottom : undefined}
                 >
                   <Message message={message} onFeedback={onFeedback} />
                 </motion.div>
@@ -137,8 +164,10 @@ export function ChatWindow({
                   <TypingIndicator toolInUse={toolInUse} />
                 </motion.div>
               )}
+              
+              <div ref={bottomAnchorRef} className="h-1" aria-hidden="true" />
             </div>
-          </ScrollArea>
+          </div>
 
           <motion.div 
             initial={{ opacity: 0, y: 10 }}
