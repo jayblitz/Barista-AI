@@ -1,35 +1,87 @@
 import { Redis } from "@upstash/redis";
 
-let redis: Redis | null = null;
+const CACHE_TTL = 3600;
+const CACHE_PREFIX = "barista:chat:";
 
-function getRedis(): Redis | null {
-  if (redis) return redis;
+let redisClient: Redis | null = null;
 
-  if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
+function getRedisClient(): Redis | null {
+  if (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN) {
+    return null;
+  }
+
+  if (!redisClient) {
     try {
-      redis = new Redis({
+      redisClient = new Redis({
         url: process.env.UPSTASH_REDIS_REST_URL,
         token: process.env.UPSTASH_REDIS_REST_TOKEN,
       });
-      return redis;
+      console.log("✅ Redis cache initialized");
     } catch (error) {
-      console.error("Failed to initialize Redis:", error);
+      console.error("❌ Failed to initialize Redis:", error);
       return null;
     }
   }
 
-  return null;
+  return redisClient;
 }
 
-const CACHE_TTL = 60 * 60; // 1 hour in seconds
-const CACHE_PREFIX = "barista:";
+function generateCacheKey(message: string): string {
+  const normalized = message
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s]/g, "")
+    .replace(/\s+/g, "_");
+  
+  return `${CACHE_PREFIX}${normalized.substring(0, 100)}`;
+}
 
-export async function getCached<T>(key: string): Promise<T | null> {
-  const client = getRedis();
-  if (!client) return null;
+export async function getCachedResponse(message: string): Promise<string | null> {
+  const redis = getRedisClient();
+  if (!redis) {
+    return null;
+  }
 
   try {
-    const cached = await client.get<T>(`${CACHE_PREFIX}${key}`);
+    const key = generateCacheKey(message);
+    const cached = await redis.get<string>(key);
+    
+    if (cached) {
+      console.log(`📦 Cache hit for: "${message.substring(0, 30)}..."`);
+      return cached;
+    }
+    
+    return null;
+  } catch (error) {
+    console.error("❌ Cache get error:", error);
+    return null;
+  }
+}
+
+export async function setCachedResponse(
+  message: string,
+  response: string
+): Promise<void> {
+  const redis = getRedisClient();
+  if (!redis) {
+    return;
+  }
+
+  try {
+    const key = generateCacheKey(message);
+    await redis.set(key, response, { ex: CACHE_TTL });
+    console.log(`💾 Cached response for: "${message.substring(0, 30)}..."`);
+  } catch (error) {
+    console.error("❌ Cache set error:", error);
+  }
+}
+
+export async function getCached<T>(key: string): Promise<T | null> {
+  const redis = getRedisClient();
+  if (!redis) return null;
+
+  try {
+    const cached = await redis.get<T>(`${CACHE_PREFIX}${key}`);
     return cached;
   } catch (error) {
     console.error("Cache get error:", error);
@@ -38,47 +90,45 @@ export async function getCached<T>(key: string): Promise<T | null> {
 }
 
 export async function setCache<T>(key: string, value: T, ttl: number = CACHE_TTL): Promise<void> {
-  const client = getRedis();
-  if (!client) return;
+  const redis = getRedisClient();
+  if (!redis) return;
 
   try {
-    await client.set(`${CACHE_PREFIX}${key}`, value, { ex: ttl });
+    await redis.set(`${CACHE_PREFIX}${key}`, value, { ex: ttl });
   } catch (error) {
     console.error("Cache set error:", error);
   }
 }
 
 export async function deleteCache(key: string): Promise<void> {
-  const client = getRedis();
-  if (!client) return;
+  const redis = getRedisClient();
+  if (!redis) return;
 
   try {
-    await client.del(`${CACHE_PREFIX}${key}`);
+    await redis.del(`${CACHE_PREFIX}${key}`);
   } catch (error) {
     console.error("Cache delete error:", error);
   }
 }
 
-export async function getCachedResponse(query: string): Promise<string | null> {
-  const normalizedQuery = query.toLowerCase().trim();
-  const cacheKey = `response:${Buffer.from(normalizedQuery).toString("base64")}`;
-  return getCached<string>(cacheKey);
-}
-
-export async function setCachedResponse(query: string, response: string): Promise<void> {
-  const normalizedQuery = query.toLowerCase().trim();
-  const cacheKey = `response:${Buffer.from(normalizedQuery).toString("base64")}`;
-  await setCache(cacheKey, response, CACHE_TTL);
-}
-
 export async function healthCheck(): Promise<boolean> {
-  const client = getRedis();
-  if (!client) return false;
-
-  try {
-    await client.ping();
-    return true;
-  } catch {
+  const redis = getRedisClient();
+  if (!redis) {
     return false;
   }
+
+  try {
+    await redis.ping();
+    return true;
+  } catch (error) {
+    console.error("❌ Redis health check failed:", error);
+    return false;
+  }
+}
+
+export function isConfigured(): boolean {
+  return !!(
+    process.env.UPSTASH_REDIS_REST_URL && 
+    process.env.UPSTASH_REDIS_REST_TOKEN
+  );
 }

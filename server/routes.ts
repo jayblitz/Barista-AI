@@ -1,9 +1,9 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { randomUUID } from "crypto";
-import { chatWithGrok, streamChatWithGrok } from "./services/grok";
-import { queryKnowledge } from "./services/vectorStore";
-import { getCachedResponse, setCachedResponse, healthCheck as cacheHealthCheck } from "./services/cache";
+import { chatWithGrok, streamChatWithGrok, isConfigured as isGrokConfigured } from "./services/grok";
+import { queryKnowledge, healthCheck as ragHealthCheck, isConfigured as isRagConfigured } from "./services/vectorStore";
+import { getCachedResponse, setCachedResponse, healthCheck as cacheHealthCheck, isConfigured as isCacheConfigured } from "./services/cache";
 import { isConfigured as isMondayConfigured } from "./services/mondayApi";
 import { chatRequestSchema, feedbackSchema, type SuggestionPill, type ChatResponse } from "@shared/schema";
 
@@ -24,19 +24,19 @@ export async function registerRoutes(
 ): Promise<Server> {
   
   app.get("/api/health", async (_req: Request, res: Response) => {
-    const cacheStatus = await cacheHealthCheck();
-    const mondayApiConfigured = isMondayConfigured();
-    const grokConfigured = !!process.env.XAI_API_KEY;
-    const pineconeConfigured = !!process.env.PINECONE_API_KEY;
+    const [cacheStatus, ragStatus] = await Promise.all([
+      cacheHealthCheck(),
+      ragHealthCheck(),
+    ]);
 
     res.json({
       status: "ok",
       timestamp: new Date().toISOString(),
       services: {
-        grok: grokConfigured ? "configured" : "not_configured",
-        pinecone: pineconeConfigured ? "configured" : "not_configured",
-        cache: cacheStatus ? "connected" : "not_connected",
-        mondayApi: mondayApiConfigured ? "configured" : "not_configured",
+        grok: isGrokConfigured() ? "configured" : "not_configured",
+        rag: isRagConfigured() ? (ragStatus ? "connected" : "error") : "not_configured",
+        cache: isCacheConfigured() ? (cacheStatus ? "connected" : "error") : "not_configured",
+        mondayApi: isMondayConfigured() ? "configured" : "not_configured",
       },
     });
   });
@@ -74,7 +74,7 @@ export async function registerRoutes(
 
       const ragContext = await queryKnowledge(message);
 
-      const grokResponse = await chatWithGrok(message, history, ragContext);
+      const grokResponse = await chatWithGrok(message, history, ragContext || undefined);
 
       if (history.length === 0) {
         await setCachedResponse(message, grokResponse.content);
@@ -136,7 +136,7 @@ export async function registerRoutes(
       await streamChatWithGrok(
         message,
         history,
-        ragContext,
+        ragContext || undefined,
         (chunk) => {
           fullResponse += chunk;
           res.write(`data: ${JSON.stringify({ type: "content", content: chunk })}\n\n`);

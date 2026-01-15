@@ -1,15 +1,13 @@
 import { Pinecone } from "@pinecone-database/pinecone";
 import OpenAI from "openai";
 
-const pinecone = new Pinecone({
-  apiKey: process.env.PINECONE_API_KEY || "",
-});
+const PINECONE_INDEX_NAME = process.env.PINECONE_INDEX || "barista-knowledge";
+const EMBEDDING_MODEL = "text-embedding-3-small";
+const TOP_K = 5;
+const MIN_SCORE = 0.7;
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
-
-const INDEX_NAME = process.env.PINECONE_INDEX || "barista-knowledge";
+let pineconeClient: Pinecone | null = null;
+let openaiClient: OpenAI | null = null;
 
 const MANUAL_KNOWLEDGE = [
   {
@@ -46,20 +44,60 @@ const MANUAL_KNOWLEDGE = [
   },
 ];
 
-async function getEmbedding(text: string): Promise<number[]> {
+function getPineconeClient(): Pinecone | null {
+  if (!process.env.PINECONE_API_KEY) {
+    return null;
+  }
+
+  if (!pineconeClient) {
+    try {
+      pineconeClient = new Pinecone({
+        apiKey: process.env.PINECONE_API_KEY,
+      });
+      console.log("✅ Pinecone client initialized");
+    } catch (error) {
+      console.error("❌ Failed to initialize Pinecone:", error);
+      return null;
+    }
+  }
+
+  return pineconeClient;
+}
+
+function getOpenAIClient(): OpenAI | null {
+  if (!process.env.OPENAI_API_KEY) {
+    return null;
+  }
+
+  if (!openaiClient) {
+    openaiClient = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    });
+  }
+
+  return openaiClient;
+}
+
+async function generateEmbedding(text: string): Promise<number[] | null> {
+  const openai = getOpenAIClient();
+  if (!openai) {
+    console.log("⚠️ OpenAI not configured for embeddings");
+    return null;
+  }
+
   try {
     const response = await openai.embeddings.create({
-      model: "text-embedding-3-small",
+      model: EMBEDDING_MODEL,
       input: text,
     });
     return response.data[0].embedding;
   } catch (error) {
-    console.error("Embedding error:", error);
-    throw new Error("Failed to generate embedding");
+    console.error("❌ Embedding error:", error);
+    return null;
   }
 }
 
-export async function queryKnowledge(query: string, topK: number = 3): Promise<string> {
+function getManualKnowledge(query: string): string[] {
   const queryLower = query.toLowerCase();
   const relevantManual: string[] = [];
 
@@ -101,31 +139,104 @@ export async function queryKnowledge(query: string, topK: number = 3): Promise<s
     relevantManual.push(MANUAL_KNOWLEDGE[7].content);
   }
 
-  const uniqueManual = [...new Set(relevantManual)];
+  return Array.from(new Set(relevantManual));
+}
+
+export async function queryKnowledge(query: string): Promise<string | null> {
+  const manualContext = getManualKnowledge(query);
+  
+  const pinecone = getPineconeClient();
+  
+  if (!pinecone) {
+    if (manualContext.length === 0) {
+      return null;
+    }
+    console.log(`📚 Found ${manualContext.length} manual knowledge entries`);
+    return manualContext.join("\n\n---\n\n");
+  }
 
   try {
-    if (!process.env.PINECONE_API_KEY) {
-      return uniqueManual.join("\n\n");
+    const embedding = await generateEmbedding(query);
+    if (!embedding) {
+      return manualContext.length > 0 ? manualContext.join("\n\n---\n\n") : null;
     }
 
-    const index = pinecone.Index(INDEX_NAME);
-    const queryEmbedding = await getEmbedding(query);
-
+    const index = pinecone.Index(PINECONE_INDEX_NAME);
+    
     const results = await index.query({
-      vector: queryEmbedding,
-      topK,
+      vector: embedding,
+      topK: TOP_K,
       includeMetadata: true,
     });
 
-    const pineconeContext = results.matches
-      ?.filter((match) => (match.score || 0) > 0.7)
-      .map((match) => match.metadata?.content as string)
-      .filter(Boolean) || [];
+    if (!results.matches || results.matches.length === 0) {
+      console.log("📭 No Pinecone matches found");
+      return manualContext.length > 0 ? manualContext.join("\n\n---\n\n") : null;
+    }
 
-    return [...uniqueManual, ...pineconeContext].join("\n\n");
+    const relevantDocs = results.matches.filter(
+      (match) => match.score && match.score >= MIN_SCORE
+    );
+
+    if (relevantDocs.length === 0) {
+      console.log("📭 No high-confidence Pinecone matches");
+      return manualContext.length > 0 ? manualContext.join("\n\n---\n\n") : null;
+    }
+
+    console.log(`📚 Found ${relevantDocs.length} Pinecone documents + ${manualContext.length} manual entries`);
+
+    const pineconeContext = relevantDocs
+      .map((doc, i) => {
+        const text = doc.metadata?.text as string || doc.metadata?.content as string || "";
+        const title = doc.metadata?.title as string || "Document";
+        const url = doc.metadata?.url as string || "";
+        
+        return `[Source ${i + 1}: ${title}]
+${text}
+${url ? `(Reference: ${url})` : ""}`;
+      })
+      .join("\n\n---\n\n");
+
+    const allContext = [...manualContext, pineconeContext].filter(Boolean);
+    return allContext.join("\n\n---\n\n");
+
   } catch (error) {
-    console.error("Pinecone query error:", error);
-    return uniqueManual.join("\n\n");
+    console.error("❌ RAG query error:", error);
+    return manualContext.length > 0 ? manualContext.join("\n\n---\n\n") : null;
+  }
+}
+
+export async function healthCheck(): Promise<boolean> {
+  const pinecone = getPineconeClient();
+  if (!pinecone) {
+    return false;
+  }
+
+  try {
+    const index = pinecone.Index(PINECONE_INDEX_NAME);
+    const stats = await index.describeIndexStats();
+    console.log(`📊 Pinecone: ${stats.totalRecordCount || 0} vectors`);
+    return true;
+  } catch (error) {
+    console.error("❌ Pinecone health check failed:", error);
+    return false;
+  }
+}
+
+export function isConfigured(): boolean {
+  return !!process.env.PINECONE_API_KEY && !!process.env.OPENAI_API_KEY;
+}
+
+export async function getVectorCount(): Promise<number> {
+  const pinecone = getPineconeClient();
+  if (!pinecone) return 0;
+
+  try {
+    const index = pinecone.Index(PINECONE_INDEX_NAME);
+    const stats = await index.describeIndexStats();
+    return stats.totalRecordCount || 0;
+  } catch {
+    return 0;
   }
 }
 
@@ -134,14 +245,20 @@ export async function upsertDocument(
   content: string,
   metadata: Record<string, string> = {}
 ): Promise<void> {
+  const pinecone = getPineconeClient();
+  if (!pinecone) {
+    console.log("Pinecone not configured, skipping upsert");
+    return;
+  }
+
   try {
-    if (!process.env.PINECONE_API_KEY) {
-      console.log("Pinecone not configured, skipping upsert");
+    const embedding = await generateEmbedding(content);
+    if (!embedding) {
+      console.log("Failed to generate embedding, skipping upsert");
       return;
     }
 
-    const index = pinecone.Index(INDEX_NAME);
-    const embedding = await getEmbedding(content);
+    const index = pinecone.Index(PINECONE_INDEX_NAME);
 
     await index.upsert([
       {
@@ -150,19 +267,12 @@ export async function upsertDocument(
         metadata: { ...metadata, content },
       },
     ]);
+    console.log(`✅ Upserted document: ${id}`);
   } catch (error) {
-    console.error("Pinecone upsert error:", error);
+    console.error("❌ Pinecone upsert error:", error);
   }
 }
 
 export async function initializeKnowledgeBase(): Promise<void> {
   console.log("Knowledge base initialized with manual knowledge entries");
-
-  for (const entry of MANUAL_KNOWLEDGE) {
-    try {
-      await upsertDocument(entry.id, entry.content, { source: "manual" });
-    } catch (error) {
-      console.error(`Failed to upsert ${entry.id}:`, error);
-    }
-  }
 }
