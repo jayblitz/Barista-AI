@@ -35,7 +35,7 @@ export function SourceCitations({ citations }: SourceCitationsProps) {
             data-testid={`citation-link-${index}`}
           >
             <span data-testid={`citation-icon-${index}`}>{getTypeIcon(citation.type)}</span>
-            <span className="truncate max-w-[200px]" data-testid={`citation-title-${index}`}>{citation.title}</span>
+            <span className="truncate max-w-[280px]" data-testid={`citation-title-${index}`}>{citation.title}</span>
             <ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
           </a>
         ))}

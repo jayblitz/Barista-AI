@@ -15,14 +15,16 @@ export interface GrokResponse {
   toolsUsed: Record<string, number>;
 }
 
-const BARISTA_SYSTEM_PROMPT = `You are Barista ☕, the friendly AI assistant for Monday Trade - a decentralized perpetual futures trading platform built on Monad blockchain.
+const BARISTA_SYSTEM_PROMPT = `You are Barista ☕, the delightfully whimsical AI assistant for Monday Trade - a decentralized perpetual futures trading platform built on Monad blockchain.
 
 ## YOUR PERSONALITY
-- Warm, helpful, and enthusiastic - like a friendly barista at a coffee shop
-- Expert but approachable, never condescending
-- Use emojis sparingly: ☕ 🚀 ✨ 💜
-- Keep responses concise (under 200 words unless detail is needed)
-- Be direct and informative - traders value accuracy over friendliness
+- You're like a friendly, slightly magical barista at a cozy coffee shop where crypto traders gather
+- Warm, enthusiastic, and genuinely excited to help - sprinkle your responses with charm and personality
+- Open with a playful, engaging phrase that reflects your barista persona (e.g., "Ah, let me brew up some knowledge for you! ☕✨")
+- Use coffee-themed metaphors naturally: "percolating through the docs", "let me grind through this", "freshly brewed info"
+- Emojis add warmth: ☕ 🚀 ✨ 💜 🔥 📈 - use them to punctuate your enthusiasm
+- Keep it conversational and flowing - like you're chatting with a regular at your coffee counter
+- End with something inviting like "Anything else I can whip up for you?" or "Ready to pour more knowledge?"
 
 ## WHAT IS MONDAY TRADE (USE THIS FOR BASIC QUESTIONS)
 Monday Trade is a decentralized perpetual futures trading platform built on Monad blockchain. It enables non-custodial, permissionless trading of crypto perpetual contracts with up to 10x leverage. Key features:
@@ -145,6 +147,7 @@ Or try again in a moment!`,
     const response = await client.chat.completions.create(requestBody);
 
     const assistantMessage = response.choices[0]?.message;
+    const content = assistantMessage?.content;
     const toolsUsed: Record<string, number> = {};
     const allCitations: GrokResponse["citations"] = [];
 
@@ -154,13 +157,25 @@ Or try again in a moment!`,
     
     for (const citation of responseCitations) {
       if (citation.url?.includes("x.com") || citation.url?.includes("twitter.com")) {
-        allCitations.push({ title: citation.title || "X Post", url: citation.url, type: "x" });
+        // Extract tweet-specific title from URL if possible
+        let tweetTitle = citation.title || "@MondayTrade_ on X";
+        const statusMatch = citation.url?.match(/\/status\/(\d+)/);
+        if (statusMatch) {
+          // Extract date from content if available for better title
+          const dateMatch = content?.match(/(\w+ \d{1,2}, \d{4})|(\d{4}-\d{2}-\d{2})/);
+          if (dateMatch) {
+            tweetTitle = `@MondayTrade_ tweet (${dateMatch[0]})`;
+          } else {
+            tweetTitle = `@MondayTrade_ tweet`;
+          }
+        }
+        allCitations.push({ title: tweetTitle, url: citation.url, type: "x" });
         toolsUsed.live_search = (toolsUsed.live_search || 0) + 1;
       } else if (citation.url?.includes("monday.trade")) {
-        allCitations.push({ title: citation.title || "Monday Trade", url: citation.url, type: "docs" });
+        allCitations.push({ title: citation.title || "Monday Trade Docs", url: citation.url, type: "docs" });
         toolsUsed.live_search = (toolsUsed.live_search || 0) + 1;
       } else if (citation.url) {
-        allCitations.push({ title: citation.title || "Web", url: citation.url, type: "web" });
+        allCitations.push({ title: citation.title || "Web Source", url: citation.url, type: "web" });
         toolsUsed.live_search = (toolsUsed.live_search || 0) + 1;
       }
     }
@@ -171,6 +186,19 @@ Or try again in a moment!`,
                            message.toLowerCase().includes("post") ||
                            message.toLowerCase().includes("announcement");
     
+    // If a tweet URL appears in the content but not in citations, extract it
+    if (content && isTwitterQuery) {
+      const tweetUrlMatch = content.match(/https:\/\/x\.com\/\w+\/status\/\d+/);
+      if (tweetUrlMatch && !allCitations.some(c => c.url === tweetUrlMatch[0])) {
+        const dateMatch = content.match(/(\w+ \d{1,2}, \d{4})|(\d{4}-\d{2}-\d{2})/);
+        allCitations.push({
+          title: dateMatch ? `@MondayTrade_ tweet (${dateMatch[0]})` : "@MondayTrade_ tweet",
+          url: tweetUrlMatch[0],
+          type: "x"
+        });
+      }
+    }
+    
     if (isTwitterQuery && allCitations.length === 0) {
       allCitations.push({ 
         title: "@MondayTrade_ on X", 
@@ -178,8 +206,6 @@ Or try again in a moment!`,
         type: "x" 
       });
     }
-
-    const content = assistantMessage?.content;
 
     if (!content) {
       return {

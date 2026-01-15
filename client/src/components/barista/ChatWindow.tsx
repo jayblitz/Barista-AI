@@ -52,7 +52,7 @@ export function ChatWindow({
             damping: 30,
             mass: 0.8
           }}
-          className="fixed bottom-24 right-6 w-96 h-[600px] bg-background border border-border rounded-2xl shadow-2xl flex flex-col overflow-hidden z-50"
+          className="fixed bottom-24 right-6 w-[440px] h-[680px] bg-background border border-border rounded-2xl shadow-2xl flex flex-col overflow-hidden z-50"
           style={{
             boxShadow: "0 25px 50px -12px rgba(153, 69, 255, 0.25), 0 0 40px rgba(153, 69, 255, 0.1)",
           }}
@@ -104,10 +104,10 @@ export function ChatWindow({
                 >
                   <BaristaAvatar size="lg" animate={true} />
                   <h3 className="text-lg font-semibold mt-4 text-foreground" data-testid="empty-state-title">
-                    Hey there!
+                    Hey there, trader!
                   </h3>
-                  <p className="text-sm text-muted-foreground mt-1 max-w-[280px]" data-testid="empty-state-description">
-                    I'm Barista, your Monday Trade assistant. Ask me anything about trading, fees, or how to get started!
+                  <p className="text-sm text-muted-foreground mt-1 max-w-[300px]" data-testid="empty-state-description">
+                    I'm Barista, your friendly Monday Trade guide. Ask me anything about trading, fees, leverage, or the latest updates - I'll brew up the answers!
                   </p>
                 </motion.div>
               )}
