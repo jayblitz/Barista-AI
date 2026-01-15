@@ -72,41 +72,9 @@ function getGrokClient(): OpenAI | null {
   return grokClient;
 }
 
-const GROK_TOOLS: OpenAI.Chat.Completions.ChatCompletionTool[] = [
-  {
-    type: "function",
-    function: {
-      name: "web_search",
-      description: "Search the web for information about Monday Trade. Use for documentation, features, fees, leverage, mechanics, and how-to guides.",
-      parameters: {
-        type: "object",
-        properties: {
-          query: {
-            type: "string",
-            description: "Search query. For Monday Trade docs, try 'site:docs.monday.trade [topic]' or 'Monday Trade [topic]'",
-          },
-        },
-        required: ["query"],
-      },
-    },
-  },
-  {
-    type: "function",
-    function: {
-      name: "x_search", 
-      description: "Search X (Twitter) for Monday Trade announcements, news, and updates. Search for @MondayTrade_ posts.",
-      parameters: {
-        type: "object",
-        properties: {
-          query: {
-            type: "string",
-            description: "Search query for X/Twitter. Include 'from:MondayTrade_' for official announcements.",
-          },
-        },
-        required: ["query"],
-      },
-    },
-  },
+const GROK_NATIVE_TOOLS = [
+  { type: "web_search" },
+  { type: "x_search" },
 ];
 
 export async function chatWithGrok(
@@ -156,21 +124,26 @@ Or try again in a moment!`,
     const response = await client.chat.completions.create({
       model: "grok-3-latest",
       messages,
-      tools: GROK_TOOLS,
-      tool_choice: "auto",
+      tools: GROK_NATIVE_TOOLS as any,
       max_tokens: 1000,
       temperature: 0.7,
     });
 
     const assistantMessage = response.choices[0]?.message;
     const toolsUsed: Record<string, number> = {};
+    const allCitations: GrokResponse["citations"] = [];
 
-    if (assistantMessage?.tool_calls) {
-      for (const toolCall of assistantMessage.tool_calls) {
-        if ('function' in toolCall && toolCall.function) {
-          const toolName = toolCall.function.name;
-          toolsUsed[toolName] = (toolsUsed[toolName] || 0) + 1;
-          console.log(`🔧 Tool used: ${toolName}`);
+    if ((response as any).citations) {
+      for (const citation of (response as any).citations) {
+        if (citation.url?.includes("x.com") || citation.url?.includes("twitter.com")) {
+          allCitations.push({ title: citation.title || "X Post", url: citation.url, type: "x" });
+          toolsUsed.x_search = (toolsUsed.x_search || 0) + 1;
+        } else if (citation.url?.includes("monday.trade")) {
+          allCitations.push({ title: citation.title || "Monday Trade", url: citation.url, type: "docs" });
+          toolsUsed.web_search = (toolsUsed.web_search || 0) + 1;
+        } else {
+          allCitations.push({ title: citation.title || "Web", url: citation.url, type: "web" });
+          toolsUsed.web_search = (toolsUsed.web_search || 0) + 1;
         }
       }
     }
@@ -197,7 +170,7 @@ What else can I help with?`,
 
     return {
       content,
-      citations: [],
+      citations: allCitations,
       toolsUsed,
     };
 
@@ -255,8 +228,7 @@ export async function streamChatWithGrok(
     const stream = await client.chat.completions.create({
       model: "grok-3-latest",
       messages,
-      tools: GROK_TOOLS,
-      tool_choice: "auto",
+      tools: GROK_NATIVE_TOOLS as any,
       max_tokens: 1000,
       temperature: 0.7,
       stream: true,
