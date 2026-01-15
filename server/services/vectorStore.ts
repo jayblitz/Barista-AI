@@ -11,64 +11,327 @@ let openaiClient: OpenAI | null = null;
 
 const MANUAL_KNOWLEDGE = [
   {
-    id: "manual-what-is-monday",
-    keywords: ["what", "monday", "trade", "about", "explain", "tell", "describe", "platform", "is monday"],
-    content: `What is Monday Trade? Monday Trade is a decentralized perpetual futures trading platform built on Monad blockchain. It enables non-custodial, permissionless trading of crypto perpetual contracts with up to 10x leverage. Key features: No KYC required, fully permissionless access, low trading fees (0.02% taker, 0% maker), support for multiple wallets, and a Voyage Points rewards program. The platform is designed for traders who want full control of their funds while accessing professional-grade trading tools.`,
+    id: "what-is-monday-trade",
+    keywords: ["what", "monday", "trade", "about", "explain", "tell", "describe", "platform", "is monday", "overview", "introduce"],
+    content: `What is Monday Trade? Monday Trade is Monad's native spot and perps DEX that offers the best of CEX and DEX trading experience. It's a decentralized perpetual futures and spot trading platform built on Monad blockchain. Monad's low latency enables Monday Trade to execute trades within milliseconds, ensuring traders can make the most of market moves, without giving up their asset ownership to centralized exchanges.
+
+Monday Trade combines the precision of a fully on-chain order book with the simplicity of AMMs into one sleek UI, delivering gas-efficient, high-performance onchain trades with optional advanced trading tools.
+
+Key Features:
+- Lightning-fast execution with millisecond settlement
+- Hybrid market structure (AMM + Order Book)
+- Non-custodial and permissionless trading
+- No KYC required
+- Up to 10x leverage on perpetuals
+- Low fees: 0.02% taker, 0% maker for perps
+
+Built on SynFutures' battle-tested infrastructure with over $300B in trading volume.`
   },
   {
-    id: "manual-access",
-    keywords: ["invite", "code", "access", "join", "start", "kyc", "verify", "verification", "sign up", "register", "wallet", "connect"],
-    content: `Monday Trade Access & Wallets: NO invite code required - the platform is fully open and permissionless. NO KYC or identity verification needed. Simply connect your wallet and start trading. Supported wallets: MetaMask, WalletConnect, Rabby, Phantom, Backpack, HaHa, and OKX Wallet. To get started: 1) Visit the platform, 2) Click "Connect Wallet", 3) Select your preferred wallet, 4) Approve the connection, 5) Start trading.`,
+    id: "perps-fees-leverage",
+    keywords: ["fee", "fees", "leverage", "margin", "imr", "mmr", "requirement", "cost", "price", "charge", "taker", "maker", "execution", "perp", "perpetual", "contract"],
+    content: `Monday Trade Perpetual Futures Trading Fees and Leverage:
+
+Trading Pairs with Specifications:
+
+BTC/USDC:
+- Maximum Leverage: 10x
+- Initial Margin Requirement (IMR): 10%
+- Maintenance Margin Requirement (MMR): 5%
+- Execution Fee: 0.01 USDC
+- Market Order Fee (Taker): 0.02%
+- Limit Order Fee Rebate (Maker): 0.00%
+
+ETH/USDC:
+- Maximum Leverage: 10x
+- IMR: 10%, MMR: 5%
+- Same fee structure as BTC/USDC
+
+MON/USDC:
+- Maximum Leverage: 10x
+- IMR: 10%, MMR: 5%
+- Same fee structure as BTC/USDC
+
+Example: With 10x leverage, you need $1,000 margin to control a $10,000 position.`
   },
   {
-    id: "manual-fees",
-    keywords: ["fee", "fees", "cost", "price", "charge", "commission", "taker", "maker", "execution"],
-    content: `Monday Trade Trading Fees: Market orders (taker): 0.02% of position value. Limit orders (maker): 0.00% - makers receive a rebate. Execution fee: 0.01 USDC per order. No deposit or withdrawal fees charged by the platform. Example: A $10,000 market order would cost $2 in trading fees (0.02%).`,
+    id: "spot-fees",
+    keywords: ["spot", "swap", "trade", "fee", "amm", "order book", "taker"],
+    content: `Monday Trade Spot Trading Fees:
+
+The platform uses a hybrid AMM + Order Book model:
+
+- Order Book Taker Fee: 0.03%
+- AMM Pool Fee: 0.3% (varies by pool)
+
+Example: Trading 1 WETH where 0.9 WETH fills via order book and 0.1 WETH via AMM:
+- Order book portion: 0.9 × 0.03% = 0.00027 WETH
+- AMM portion: 0.1 × 0.3% = 0.0003 WETH
+- Total fees: 0.00057 WETH
+
+The hybrid model optimizes for lowest total fees by routing through order book first.`
   },
   {
-    id: "manual-leverage-margin",
-    keywords: ["leverage", "margin", "imr", "mmr", "requirement", "collateral", "initial", "maintenance", "max", "maximum", "multiplier", "x"],
-    content: `Leverage & Margin Requirements: Maximum leverage: 10x for all trading pairs. Initial Margin Requirement (IMR): 10% - the minimum margin needed to open a position. Maintenance Margin Requirement (MMR): 5% - if your margin falls below this, liquidation may occur. Example: With 10x leverage, you need $1,000 to control a $10,000 position. Your liquidation price is calculated based on the 5% MMR threshold.`,
+    id: "access-wallets-kyc",
+    keywords: ["invite", "code", "access", "join", "start", "kyc", "verify", "verification", "sign up", "register", "wallet", "connect", "metamask", "rabby", "phantom"],
+    content: `Monday Trade Access & Wallets:
+
+NO invite code required - the platform is fully open and permissionless.
+NO KYC or identity verification needed.
+
+Supported Wallets:
+- MetaMask
+- WalletConnect
+- Rabby
+- Phantom
+- Backpack
+- HaHa Wallet
+- OKX Wallet
+
+How to Start:
+1. Visit app.monday.trade
+2. Click "Connect Wallet"
+3. Select your preferred wallet
+4. Approve the connection
+5. Ensure you have MON tokens for gas fees
+6. Start trading!
+
+Mobile trading is supported via wallets with dApp browsers (Rabby Mobile, Phantom, OKX).`
   },
   {
-    id: "manual-pairs",
-    keywords: ["pair", "pairs", "trading", "markets", "btc", "eth", "mon", "usdc", "asset", "crypto", "available"],
-    content: `Available Trading Pairs: Currently supported perpetual contracts: BTC/USDC (Bitcoin), ETH/USDC (Ethereum), MON/USDC (Monad native token). All pairs support up to 10x leverage. More pairs may be added as the platform evolves.`,
+    id: "liquidation",
+    keywords: ["liquidat", "liquid", "margin call", "closed", "forced", "bankrupt", "insurance", "mmr"],
+    content: `Monday Trade Liquidation System:
+
+When Liquidation Occurs:
+Positions are liquidated when margin falls below the 5% Maintenance Margin Requirement (MMR).
+
+Liquidation Methods:
+
+1. Taking-Over Approach (Primary):
+- Liquidator takes over the position and remaining margin
+- Tops up margin to meet 10% IMR
+- Remaining margin is potential profit for liquidator
+
+2. Forced Close Approach:
+- Position is forced to trade against AMM to close
+- Trading fee is charged
+- Remaining margins go to insurance fund
+
+Partial Liquidation: Both methods support partial liquidation for large positions.
+
+Insurance Fund: First used to cover losses if position is bankrupted. If insufficient, losses are socialized to profitable opposite positions.
+
+To Avoid Liquidation:
+- Use lower leverage
+- Set stop-loss orders
+- Add more margin
+- Reduce position size
+- Monitor your liquidation price`
   },
   {
-    id: "manual-voyage",
-    keywords: ["voyage", "point", "points", "reward", "rewards", "earn", "airdrop", "incentive", "bonus", "referral"],
-    content: `Voyage Points Program: Total allocation: 2,000,000 points distributed weekly over 24 weeks. How to earn: Trading volume (primary method), Providing liquidity (LP), Holding positions, Referral program (20% bonus on referred users' points). Points may be converted to platform tokens in the future. Check the Voyage dashboard to track your points accumulation.`,
-  },
-  {
-    id: "manual-stop-loss",
-    keywords: ["stop", "loss", "sl", "tp", "take", "profit", "order", "close", "protect", "risk"],
-    content: `Stop Loss & Take Profit: When opening a position, click "TP/SL" to set protective orders. Stop Loss: Automatically closes your position when price moves against you to a specified level. Take Profit: Automatically closes your position when price reaches your target profit level. You can modify TP/SL after opening a position from the Positions tab. Recommended: Always use stop-loss orders to manage risk, especially with leveraged positions.`,
-  },
-  {
-    id: "manual-funding",
+    id: "funding-rate",
     keywords: ["funding", "rate", "rates", "8 hour", "hourly", "periodic", "payment", "long", "short"],
-    content: `Funding Rate Mechanism: Funding rates keep perpetual prices aligned with spot prices. Settlement: Every 8 hours. Positive funding rate: Long positions pay shorts. Negative funding rate: Short positions pay longs. The rate is variable based on the difference between perpetual and spot prices. Check the current funding rate on the trading interface before opening positions, as it affects your holding costs.`,
+    content: `Monday Trade Funding Rate Mechanism:
+
+Purpose: Keep perpetual futures prices aligned with spot prices.
+
+Formula: FundingFeeRate = ((P_fair - P_spot) / P_spot) × (Δt / Interval)
+
+Funding Intervals: 1 hour, 8 hours, or 24 hours depending on the trading pair.
+
+When Funding is Realized:
+- When positions are increased
+- When positions are reduced or closed
+- When margin is adjusted
+
+Direction:
+- Positive funding rate: Longs pay shorts (perp > spot)
+- Negative funding rate: Shorts pay longs (perp < spot)
+
+Check the current funding rate on the trading interface before opening positions.`
   },
   {
-    id: "manual-liquidation",
-    keywords: ["liquidat", "liquid", "margin call", "closed", "forced", "risk", "wipe"],
-    content: `Liquidation Process: Liquidation occurs when your margin falls below the 5% Maintenance Margin Requirement (MMR). The liquidation engine automatically closes your position to prevent negative equity. Remaining margin (if any) is returned after fees. To avoid liquidation: Use lower leverage, set stop-losses, add more margin, or reduce position size. Monitor your liquidation price shown in the Positions tab.`,
+    id: "voyage-points",
+    keywords: ["voyage", "point", "points", "reward", "rewards", "earn", "airdrop", "incentive", "bonus", "referral", "program"],
+    content: `Voyage Point Program:
+
+Duration: 24-week campaign
+Distribution: Points calculated and distributed weekly (Monday 00:00 UTC to Sunday 23:59 UTC)
+
+How to Earn Points:
+
+Spot Market:
+- Limit Orders (Maker): Points when orders fill
+- Liquidity Provision: Supply to AMM pools
+- Market Orders (Taker): Execute market orders
+
+Perp Market:
+- Limit Orders (Maker)
+- Liquidity Provision
+- Market Orders (Taker)
+- Position Holding: Bonus multipliers for holding positions
+
+Market Multipliers:
+- Spot MON/USDC: 4X
+- Perp BTC/USDC, ETH/USDC, MON/USDC: 5X
+- Spot AUSD/earnAUSD: 3X
+- Spot gMON/MON, WBTC/USDC: 2X
+
+Consistency Bonus: Trade 7 consecutive days for bonus multiplier.
+Referral: Earn 20% of referred users' points.`
   },
   {
-    id: "manual-deposit-withdraw",
-    keywords: ["deposit", "withdraw", "fund", "money", "usdc", "balance", "transfer", "add"],
-    content: `Deposits & Withdrawals: Monday Trade is non-custodial - you maintain control of your funds. Deposit: Send USDC to your trading account from your connected wallet. Withdraw: Request withdrawal anytime - funds return to your wallet. No platform deposit/withdrawal fees (only network gas fees apply). Ensure you have sufficient USDC on Monad network for trading.`,
+    id: "stop-loss-take-profit",
+    keywords: ["stop", "loss", "sl", "tp", "take", "profit", "order", "close", "protect", "risk", "limit"],
+    content: `Stop Loss & Take Profit on Monday Trade:
+
+Order Types Available:
+- Market Orders: Execute immediately at best available price
+- Limit Orders: Execute at your specified price or better
+- Stop-Loss Orders: Automatically close position when price reaches stop level
+- Take-Profit Orders: Automatically close position when price reaches profit target
+
+How to Set TP/SL:
+1. When opening a position, click "TP/SL"
+2. Enter your stop-loss price (below entry for longs, above for shorts)
+3. Enter your take-profit price (above entry for longs, below for shorts)
+4. Confirm the order
+
+You can modify TP/SL after opening from the Positions tab.
+
+Best Practice: Always use stop-loss orders to manage risk, especially with leveraged positions.`
   },
   {
-    id: "manual-monad",
-    keywords: ["monad", "blockchain", "chain", "network", "l1", "layer"],
-    content: `Monad Blockchain: Monday Trade is built on Monad, a high-performance Layer 1 blockchain. Benefits: Fast transaction finality, low gas fees, high throughput. You'll need MON tokens for gas fees when interacting with the platform. Monad is EVM-compatible, so you can use familiar Ethereum wallets.`,
+    id: "trading-pairs",
+    keywords: ["pair", "pairs", "trading", "markets", "btc", "eth", "mon", "usdc", "asset", "crypto", "available", "list"],
+    content: `Monday Trade Available Trading Pairs:
+
+Perpetual Futures:
+- BTC/USDC (10x leverage)
+- ETH/USDC (10x leverage)
+- MON/USDC (10x leverage)
+
+Spot Trading Pairs:
+- MON/USDC (0.05% and 0.3% fee tiers)
+- WBTC/USDC
+- WETH/USDC
+- gMON/MON
+- AUSD/earnAUSD
+
+Pool Creation: Users can create new liquidity pools for any ERC-20 token pair with minimal requirements.
+
+More pairs will be added based on community requirements.`
   },
   {
-    id: "manual-security",
-    keywords: ["security", "safe", "secure", "custod", "audit", "trust", "risk", "funds"],
-    content: `Security & Non-Custodial: Monday Trade is fully non-custodial - you always control your private keys. Funds are held in smart contracts, not by the platform. The platform uses transparent, auditable smart contracts. Trading is done via signed transactions from your wallet. Always verify you're on the official Monday Trade site to avoid phishing.`,
+    id: "monad-blockchain",
+    keywords: ["monad", "blockchain", "chain", "network", "l1", "layer", "gas", "mon token", "evm"],
+    content: `Monad Blockchain - Why Monday Trade Uses It:
+
+Performance:
+- 10,000 TPS throughput
+- 500ms block times
+- 1-second finality
+
+This enables CEX-like experience with instant trade confirmations and negligible transaction costs.
+
+EVM Compatibility: Monad is fully EVM-equivalent. All Ethereum wallets and tools work out of the box.
+
+MON Token: Used for gas fees on Monad network. You need MON tokens to pay for transactions.
+
+Architecture: Uses parallel execution and superscalar pipelining for high throughput while maintaining decentralization.
+
+Decentralized: Proof-of-Stake with MonadBFT consensus. Anyone can run a full node.`
+  },
+  {
+    id: "security-noncustodial",
+    keywords: ["security", "safe", "secure", "custod", "audit", "trust", "risk", "funds", "non-custodial"],
+    content: `Monday Trade Security & Non-Custodial Features:
+
+Non-Custodial: You always control your private keys. Funds are held in smart contracts, not by the platform.
+
+On-Chain Execution: All trades executed fully on-chain for transparency and auditability.
+
+Proven Infrastructure: Built on SynFutures' battle-tested infrastructure with over $300B in trading volume.
+
+Risk Disclosure:
+- Smart contract risk exists in all DeFi protocols
+- Leveraged positions can be liquidated
+- Cryptocurrency prices are volatile
+- Liquidity providers may experience impermanent loss
+
+Best Practices:
+- Use appropriate leverage for your risk tolerance
+- Set stop-loss orders to limit downside
+- Never trade more than you can afford to lose
+- Verify you're on the official site (app.monday.trade)`
+  },
+  {
+    id: "how-to-start",
+    keywords: ["start", "begin", "how to", "trade", "guide", "tutorial", "getting started", "first"],
+    content: `How to Start Trading on Monday Trade:
+
+Step 1: Set Up Your Wallet
+- Add Monad network to MetaMask or your preferred wallet
+- Get MON tokens for gas fees
+
+Step 2: Connect to Monday Trade
+- Visit app.monday.trade
+- Click "Connect Wallet"
+- Select your wallet and approve connection
+
+Step 3: Deposit Funds
+- Deposit USDC or other supported assets
+- Ensure you have MON for gas
+
+Step 4: Start Trading
+- Choose Spot or Perps section
+- Select your trading pair
+- Enter order details
+- Confirm transaction
+
+No sign-up, email, or KYC required. Just connect and trade!`
+  },
+  {
+    id: "liquidity-provision",
+    keywords: ["liquidity", "lp", "pool", "provide", "yield", "impermanent", "loss", "amm"],
+    content: `Providing Liquidity on Monday Trade:
+
+How to Add Liquidity:
+1. Navigate to Pools section
+2. Select an existing pool or create new one
+3. Click "Add Liquidity"
+4. Enter amounts for each token
+5. Review price range (for concentrated liquidity)
+6. Confirm transaction
+
+Earnings:
+- Trading fees proportional to your liquidity share
+- Voyage Points during reward program
+
+Impermanent Loss: Occurs when token price ratios change. Greater price changes = more significant loss compared to holding.
+
+Tips:
+- Start with stablecoin pairs for lower IL risk
+- Concentrated liquidity positions are more capital efficient
+- Monitor positions regularly during volatile markets`
+  },
+  {
+    id: "glossary",
+    keywords: ["term", "definition", "mean", "glossary", "explain"],
+    content: `Monday Trade Glossary:
+
+AMM: Automated Market Maker - uses liquidity pools and formulas to price assets.
+Funding Rate: Periodic payments between longs and shorts to align perp with spot price.
+IMR: Initial Margin Requirement (10%) - minimum margin to open a position.
+MMR: Maintenance Margin Requirement (5%) - minimum to keep position open.
+Leverage: Multiplier for trading exposure (up to 10x on Monday Trade).
+Liquidation: Forced closure when margin falls below MMR.
+Pearl: Data structure representing liquidity at each price point.
+Perpetual Futures: Derivative contracts with no expiry tracking underlying asset.
+Slippage: Difference between expected and executed price.
+Taker: Executes against existing liquidity (pays 0.02% on perps).
+Maker: Provides liquidity via limit orders (earns 0% rebate).`
   },
 ];
 
@@ -187,11 +450,11 @@ export async function queryKnowledge(query: string): Promise<string | null> {
 
     const pineconeContext = relevantDocs
       .map((doc, i) => {
-        const text = doc.metadata?.text as string || doc.metadata?.content as string || "";
+        const text = doc.metadata?.content as string || doc.metadata?.text as string || "";
         const title = doc.metadata?.title as string || "Document";
         const url = doc.metadata?.url as string || "";
         
-        return `[Source ${i + 1}: ${title}]
+        return `[Source: ${title}]
 ${text}
 ${url ? `(Reference: ${url})` : ""}`;
       })
