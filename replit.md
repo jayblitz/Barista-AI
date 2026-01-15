@@ -4,12 +4,13 @@
 Barista is an AI-powered chat assistant for Monday Trade, a decentralized perpetual futures trading platform on Monad blockchain. The assistant uses Grok AI (xAI) for natural language processing with RAG (Retrieval-Augmented Generation) for accurate answers about Monday Trade's features.
 
 ## Current State
-**Version 1.0 - MVP Complete**
+**Version 1.1 - UI Redesign Complete**
 - Full-stack chat widget with Grok AI integration
-- Purple Monday Trade branding theme
+- Warm coffee-brown Monday Trade branding theme (updated Jan 2026)
+- Two-column landing page with hero section and chat preview
 - RAG with manual knowledge entries
 - Redis caching for common queries
-- Beautiful animated Barista avatar
+- Beautiful animated Barista avatar with brown coffee theme
 
 ## Architecture
 
@@ -20,7 +21,7 @@ Barista is an AI-powered chat assistant for Monday Trade, a decentralized perpet
   - `ChatWindow.tsx` - Chat window with header, messages, input
   - `ChatInput.tsx` - Text input with send button
   - `Message.tsx` - Message bubbles with formatting
-  - `FloatingChatBubble.tsx` - Purple floating button
+  - `FloatingChatBubble.tsx` - Coffee brown floating button with sparkle
   - `SuggestionPill.tsx` - Quick action pills
   - `TypingIndicator.tsx` - Animated loading state
   - `SourceCitations.tsx` - Source links display
@@ -63,6 +64,8 @@ Barista is an AI-powered chat assistant for Monday Trade, a decentralized perpet
 - `MONDAY_API_URL` - API base URL
 
 ## Recent Changes
+- **Jan 15, 2026**: UI redesign - Coffee brown theme, new landing page with hero + chat preview
+- **Jan 2026**: Upgraded to Grok-3-latest model with web_search and x_search tools
 - **Jan 2026**: Initial MVP with Grok AI, RAG, and chat UI
 
 ## Tech Stack
@@ -73,9 +76,11 @@ Barista is an AI-powered chat assistant for Monday Trade, a decentralized perpet
 - **Cache**: Upstash Redis
 
 ## Design System
-- Primary Color: Purple (#9945FF / hue 273)
-- Dark theme default with light mode support
+- Primary Color: Coffee Brown (#8B5A3B / hue 25)
+- Background: Cream/beige (#F8F5F2 / hue 35 30% 96%)
+- Cards: White (#FFFFFF)
+- Light theme default with dark mode support
 - Inter font family
 - Rounded corners (rounded-2xl for chat elements)
-- Animated steam particles on avatar
-- Purple glow effects
+- Animated steam particles on avatar with brown tint
+- Warm brown glow effects
