@@ -51,7 +51,14 @@ Monday Trade is a decentralized perpetual futures trading platform built on Mona
 ## OFFICIAL LINKS
 - App: app.monday.trade
 - Docs: docs.monday.trade  
-- Twitter/X: @MondayTrade_`;
+- Twitter/X: @MondayTrade_
+
+## SEARCH TOOLS INSTRUCTIONS
+When the user asks about:
+- Latest tweets, posts, announcements, news, or updates → USE x_search with query "from:MondayTrade_" to get actual tweet content
+- Documentation, features, fees, mechanics → USE web_search with "site:docs.monday.trade [topic]"
+
+IMPORTANT: When using x_search, include the ACTUAL tweet text and date in your response, not just "let me check". The search results contain the real content.`;
 
 let grokClient: OpenAI | null = null;
 
@@ -133,19 +140,35 @@ Or try again in a moment!`,
     const toolsUsed: Record<string, number> = {};
     const allCitations: GrokResponse["citations"] = [];
 
-    if ((response as any).citations) {
-      for (const citation of (response as any).citations) {
-        if (citation.url?.includes("x.com") || citation.url?.includes("twitter.com")) {
-          allCitations.push({ title: citation.title || "X Post", url: citation.url, type: "x" });
-          toolsUsed.x_search = (toolsUsed.x_search || 0) + 1;
-        } else if (citation.url?.includes("monday.trade")) {
-          allCitations.push({ title: citation.title || "Monday Trade", url: citation.url, type: "docs" });
-          toolsUsed.web_search = (toolsUsed.web_search || 0) + 1;
-        } else {
-          allCitations.push({ title: citation.title || "Web", url: citation.url, type: "web" });
-          toolsUsed.web_search = (toolsUsed.web_search || 0) + 1;
-        }
+    const responseCitations = (response as any).citations || 
+                              (assistantMessage as any)?.citations || 
+                              [];
+    
+    for (const citation of responseCitations) {
+      if (citation.url?.includes("x.com") || citation.url?.includes("twitter.com")) {
+        allCitations.push({ title: citation.title || "X Post", url: citation.url, type: "x" });
+        toolsUsed.x_search = (toolsUsed.x_search || 0) + 1;
+      } else if (citation.url?.includes("monday.trade")) {
+        allCitations.push({ title: citation.title || "Monday Trade", url: citation.url, type: "docs" });
+        toolsUsed.web_search = (toolsUsed.web_search || 0) + 1;
+      } else if (citation.url) {
+        allCitations.push({ title: citation.title || "Web", url: citation.url, type: "web" });
+        toolsUsed.web_search = (toolsUsed.web_search || 0) + 1;
       }
+    }
+
+    const isTwitterQuery = message.toLowerCase().includes("tweet") || 
+                           message.toLowerCase().includes("twitter") || 
+                           message.toLowerCase().includes(" x ") ||
+                           message.toLowerCase().includes("post") ||
+                           message.toLowerCase().includes("announcement");
+    
+    if (isTwitterQuery && allCitations.length === 0) {
+      allCitations.push({ 
+        title: "@MondayTrade_ on X", 
+        url: "https://x.com/MondayTrade_", 
+        type: "x" 
+      });
     }
 
     const content = assistantMessage?.content;
