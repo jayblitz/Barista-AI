@@ -6,6 +6,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/home";
+import { initializeTheme } from "@/components/ThemeToggle";
 
 function Router() {
   return (
@@ -18,12 +19,7 @@ function Router() {
 
 function App() {
   useEffect(() => {
-    const savedTheme = localStorage.getItem("theme");
-    if (savedTheme === "light") {
-      document.documentElement.classList.remove("dark");
-    } else {
-      document.documentElement.classList.add("dark");
-    }
+    initializeTheme();
   }, []);
 
   return (

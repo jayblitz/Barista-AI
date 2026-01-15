@@ -1,30 +1,29 @@
 # Barista Design Guidelines
 
 ## Design Approach
-**Reference-Based**: Drawing inspiration from Linear's clean chat interface, Intercom's widget patterns, and ChatGPT's message hierarchy. This is a utility-focused chat assistant requiring clarity and efficiency while maintaining Monday Trade's warm, approachable brand personality.
+**Reference-Based**: Drawing inspiration from Monday Trade's trading platform (app.monday.trade), Linear's clean chat interface, and ChatGPT's message hierarchy. This is a utility-focused chat assistant requiring clarity and efficiency while matching the Monday Trade dark purple theme.
 
 ## Core Design Principles
-1. **Coffee Shop Warmth**: Friendly, approachable interface with warm brown tones and subtle animations
+1. **Coffee Shop Warmth**: Friendly, approachable AI assistant with personality
 2. **Trading Precision**: Clear information hierarchy for market data and citations
-3. **Coffee Brown Identity**: Rich coffee brown as the primary brand color, creating a warm, inviting experience
-4. **Light Foundation**: Clean cream/beige backgrounds with white cards for a professional, readable interface
+3. **Purple Power**: Bold use of brand purple (#9945FF) for primary actions and accents
+4. **Dark Foundation**: Professional dark theme matching app.monday.trade for reduced eye strain during trading
+5. **System Theme**: Respects OS dark/light preference by default
 
-## Brand Colors (Monday Trade - Coffee Theme)
-- Primary Brown: `#8B5A3B` (hsl 25 55% 35%)
-- Primary Light: `#A67B5B`
-- Primary Dark: `#6B4423`
-- Background Cream: `#F8F5F2` (hsl 35 30% 96%)
-- Card White: `#FFFFFF`
-- Accent Tan: `#E8DCD0` (hsl 30 35% 88%)
-- Text Dark: `#3D2B1F` (hsl 25 40% 15%)
-- Muted Text: `#6B5B52` (hsl 25 15% 45%)
-- Border Subtle: `#E5DDD5`
+## Brand Colors (Monday Trade)
+### Light Mode
+- Primary Purple: `#9945FF` (hsl 273 100% 63%)
+- Background: Light gray-purple (hsl 250 15% 95%)
+- Card: White (#FFFFFF)
+- Text: Dark purple-gray (hsl 250 30% 12%)
 
-### Dark Mode Colors
-- Background: `hsl(25 30% 8%)`
-- Card: `hsl(25 25% 10%)`
-- Primary: `hsl(25 55% 50%)`
-- Text: `#FAFAFA`
+### Dark Mode (matches app.monday.trade)
+- Primary Purple: `#9945FF` (hsl 273 100% 63%)
+- Background Dark: Deep blue-black (hsl 250 30% 6%)
+- Card Dark: Dark blue-gray (hsl 250 30% 9%)
+- Text: White (#FAFAFA)
+- Success Green: `#14F195` (hsl 155 100% 52%)
+- Error Red: (hsl 0 84% 50%)
 
 ## Typography
 **Font Stack**: Inter (system fallback)
@@ -55,33 +54,36 @@
 ## Component Library
 
 ### 1. Floating Chat Bubble
-- Circular button with solid coffee brown background
-- Coffee cup icon (Lucide `Coffee`) with sparkle accent
-- Pulsing brown glow animation (subtle, 2s duration)
-- Scale effect on hover (1.05)
+- Circular button with solid purple background (#9945FF)
+- Coffee cup icon with sparkle accent
+- Animated purple glow pulse (2s infinite)
+- Subtle floating animation
+- Scale effect on hover (1.08)
 - Fixed position: `bottom-6 right-6`
 
-### 2. Chat Window
-- White/cream background in light mode
+### 2. Chat Window (Animated)
+- Opens with spring animation (scale + fade + slide)
+- Purple glow shadow effect
+- White/card background
 - Rounded corners: `rounded-2xl`
-- Shadow: `shadow-2xl` with warm brown tint
-- Header: Barista avatar + title + close button
-- Body: Scrollable message area
+- Header: Barista avatar + title + close button (with sparkle rotation animation)
+- Body: Scrollable message area with animated message entry
 - Footer: Input area with suggestion pills
 
 ### 3. BaristaAvatar Component
 - Animated SVG coffee cup (48px x 48px)
 - Steam particles rising (CSS keyframe animation)
 - Friendly face on cup (eyes + smile)
-- Brown gradient fill for coffee liquid (#8B5A3B to #6B4423)
-- Subtle animation on interaction
+- Purple gradient fill for coffee liquid (#9945FF to #7B2FE0)
+- Spring animation on load
 
-### 4. Message Bubbles
+### 4. Message Bubbles (Animated)
 **User Messages**:
-- Background: Coffee brown (`bg-primary`)
+- Background: Primary purple (`bg-primary`)
 - Text: White (`text-primary-foreground`)
 - Alignment: Right-aligned
 - Border radius: `rounded-2xl rounded-br-sm`
+- Entry animation: slide up + fade in
 
 **Assistant Messages**:
 - Background: Muted/Card background
@@ -89,6 +91,7 @@
 - Alignment: Left-aligned
 - Border radius: `rounded-2xl rounded-bl-sm`
 - Avatar on left
+- Entry animation: slide up + fade in
 
 ### 5. Suggestion Pills
 - Background: Light with subtle border
@@ -98,51 +101,41 @@
 - Font: `text-xs font-medium`
 
 ### 6. Chat Preview Card (Landing Page)
-- White background with shadow
+- White/card background with shadow
 - Header section with avatar and title
 - Sample conversation showing user/assistant messages
 - Professional styling matching production chat
 
-### 7. Tool Usage Indicators
-- Small badge above message
-- Background: Primary with low opacity (`bg-primary/10`)
-- Uses Lucide icons for search types
-- Padding: `px-2 py-1`
-
-### 8. Typing Indicator
-- "Brewing your answer" text with Coffee icon
-- Three bouncing dots animation
-- Brown dots (`bg-primary`)
-
-### 9. Source Citations
-- Compact link list below message
-- Subtle background styling
-- Links: Primary color with underline on hover
-
-### 10. Feedback Buttons
-- Thumbs up/down icons (Lucide)
-- Subtle styling until hovered
-- Active state with primary color highlight
-
-### 11. Input Area
-- Text input: Full width with primary border on focus
-- Cream/white background
-- Rounded corners: `rounded-xl`
-- Send button: Brown circle with send icon
+### 7. Theme Toggle
+- Cycles through: System -> Light -> Dark -> System
+- Shows Monitor icon for system, Sun for light, Moon for dark
+- System mode automatically follows OS preference
 
 ## Animations
-**Sparingly Used**:
-1. **Floating bubble pulse**: 2s infinite brown glow
-2. **Steam particles**: Rising animation on BaristaAvatar (3s loop)
-3. **Message fade-in**: Slide up + opacity (0.3s ease-out)
-4. **Typing dots bounce**: Staggered vertical bounce
+
+### Chat Box Animations
+1. **Open**: Spring animation with scale (0.9 -> 1), opacity, and translateY
+2. **Close**: Reverse with faster timing (0.2s)
+3. **Header slide**: Subtle slide down on open
+4. **Footer slide**: Subtle slide up on open
+
+### Message Animations
+1. **Entry**: Slide up (15px) + fade in + scale (0.98 -> 1)
+2. **Spring timing**: stiffness 400, damping 25 for snappy feel
+
+### Other Animations
+1. **Floating bubble pulse**: 2s infinite purple glow
+2. **Floating bubble float**: 3s infinite subtle vertical movement
+3. **Sparkle rotation**: Periodic wiggle animation
+4. **Steam particles**: Rising animation on BaristaAvatar (3s loop)
+5. **Typing dots bounce**: Staggered vertical bounce
 
 **No Custom Hover States for Buttons**: Use built-in Button/Badge hover behavior
 
 ## Images
 **BaristaAvatar**: Custom SVG illustration
 - Coffee cup character with friendly face
-- Brown gradient liquid fill
+- Purple gradient liquid fill
 - Steam particles as animated paths
 
 **No hero images** - Clean text-based landing page with chat preview card
@@ -162,10 +155,13 @@ Use Lucide React icons throughout:
 - `ExternalLink` - External links
 - `Search` - Web search indicator
 - `ThumbsUp`/`ThumbsDown` - Feedback
+- `Monitor` - System theme indicator
+- `Sun`/`Moon` - Light/Dark theme indicators
 
 ## Quality Standards
 - Consistent spacing using Tailwind primitives
 - Smooth 60fps animations via framer-motion
+- Spring-based animations for natural feel
 - Responsive design: Mobile-first approach
 - Loading states for all async operations
 - Error states with retry actions

@@ -2,59 +2,61 @@
 @tailwind components;
 @tailwind utilities;
 
-/* LIGHT MODE - Monday Trade Coffee Brown Theme */
+/* LIGHT MODE - Monday Trade Purple Theme */
 :root {
   --button-outline: rgba(0,0,0, .10);
   --badge-outline: rgba(0,0,0, .05);
   --opaque-button-border-intensity: -8;
   --elevate-1: rgba(0,0,0, .03);
   --elevate-2: rgba(0,0,0, .08);
-  --background: 35 30% 96%;
-  --foreground: 25 40% 15%;
-  --border: 30 15% 88%;
+  --background: 250 15% 95%;
+  --foreground: 250 30% 12%;
+  --border: 250 15% 88%;
   --card: 0 0% 100%;
-  --card-foreground: 25 40% 15%;
-  --card-border: 30 15% 90%;
-  --sidebar: 35 25% 94%;
-  --sidebar-foreground: 25 40% 18%;
-  --sidebar-border: 30 15% 88%;
-  --sidebar-primary: 25 55% 35%;
+  --card-foreground: 250 30% 12%;
+  --card-border: 250 15% 90%;
+  --sidebar: 250 15% 92%;
+  --sidebar-foreground: 250 30% 15%;
+  --sidebar-border: 250 15% 88%;
+  --sidebar-primary: 273 100% 63%;
   --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 30 20% 90%;
-  --sidebar-accent-foreground: 25 40% 20%;
-  --sidebar-ring: 25 55% 35%;
+  --sidebar-accent: 250 15% 88%;
+  --sidebar-accent-foreground: 250 30% 20%;
+  --sidebar-ring: 273 100% 63%;
   --popover: 0 0% 100%;
-  --popover-foreground: 25 40% 18%;
-  --popover-border: 30 15% 90%;
-  --primary: 25 55% 35%;
+  --popover-foreground: 250 30% 15%;
+  --popover-border: 250 15% 90%;
+  --primary: 273 100% 63%;
   --primary-foreground: 0 0% 100%;
-  --secondary: 30 15% 92%;
-  --secondary-foreground: 25 40% 20%;
-  --muted: 30 12% 93%;
-  --muted-foreground: 25 15% 45%;
-  --accent: 30 35% 88%;
-  --accent-foreground: 25 55% 25%;
+  --secondary: 250 15% 90%;
+  --secondary-foreground: 250 30% 20%;
+  --muted: 250 12% 92%;
+  --muted-foreground: 250 15% 45%;
+  --accent: 250 20% 88%;
+  --accent-foreground: 273 80% 40%;
   --destructive: 0 84% 45%;
   --destructive-foreground: 0 0% 100%;
-  --input: 30 15% 80%;
-  --ring: 25 55% 35%;
-  --chart-1: 25 55% 35%;
-  --chart-2: 165 100% 25%;
-  --chart-3: 220 85% 35%;
-  --chart-4: 280 75% 40%;
-  --chart-5: 30 90% 45%;
+  --success: 155 100% 52%;
+  --success-foreground: 0 0% 0%;
+  --input: 250 15% 82%;
+  --ring: 273 100% 63%;
+  --chart-1: 273 100% 63%;
+  --chart-2: 155 100% 52%;
+  --chart-3: 220 85% 55%;
+  --chart-4: 350 80% 55%;
+  --chart-5: 45 90% 55%;
   --font-sans: Inter, sans-serif;
   --font-serif: Georgia, serif;
   --font-mono: Menlo, monospace;
   --radius: .5rem;
-  --shadow-2xs: 0px 2px 0px 0px hsl(25 20% 10% / 0.03);
-  --shadow-xs: 0px 2px 0px 0px hsl(25 20% 10% / 0.05);
-  --shadow-sm: 0px 2px 0px 0px hsl(25 20% 10% / 0.05), 0px 1px 2px -1px hsl(25 20% 10% / 0.08);
-  --shadow: 0px 2px 0px 0px hsl(25 20% 10% / 0.05), 0px 1px 2px -1px hsl(25 20% 10% / 0.08);
-  --shadow-md: 0px 2px 0px 0px hsl(25 20% 10% / 0.06), 0px 2px 4px -1px hsl(25 20% 10% / 0.10);
-  --shadow-lg: 0px 2px 0px 0px hsl(25 20% 10% / 0.08), 0px 4px 6px -1px hsl(25 20% 10% / 0.12);
-  --shadow-xl: 0px 2px 0px 0px hsl(25 20% 10% / 0.10), 0px 8px 10px -1px hsl(25 20% 10% / 0.15);
-  --shadow-2xl: 0px 2px 0px 0px hsl(25 20% 10% / 0.15);
+  --shadow-2xs: 0px 2px 0px 0px hsl(273 50% 20% / 0.03);
+  --shadow-xs: 0px 2px 0px 0px hsl(273 50% 20% / 0.05);
+  --shadow-sm: 0px 2px 0px 0px hsl(273 50% 20% / 0.05), 0px 1px 2px -1px hsl(273 50% 20% / 0.08);
+  --shadow: 0px 2px 0px 0px hsl(273 50% 20% / 0.05), 0px 1px 2px -1px hsl(273 50% 20% / 0.08);
+  --shadow-md: 0px 2px 0px 0px hsl(273 50% 20% / 0.06), 0px 2px 4px -1px hsl(273 50% 20% / 0.10);
+  --shadow-lg: 0px 2px 0px 0px hsl(273 50% 20% / 0.08), 0px 4px 6px -1px hsl(273 50% 20% / 0.12);
+  --shadow-xl: 0px 2px 0px 0px hsl(273 50% 20% / 0.10), 0px 8px 10px -1px hsl(273 50% 20% / 0.15);
+  --shadow-2xl: 0px 2px 0px 0px hsl(273 50% 20% / 0.15);
   --tracking-normal: 0em;
   --spacing: 0.25rem;
 
@@ -87,54 +89,57 @@
   --destructive-border: hsl(from hsl(var(--destructive)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
 }
 
+/* DARK MODE - Monday Trade Purple/Dark Theme matching app.monday.trade */
 .dark {
   --button-outline: rgba(255,255,255, .10);
   --badge-outline: rgba(255,255,255, .05);
   --opaque-button-border-intensity: 9;
   --elevate-1: rgba(255,255,255, .04);
   --elevate-2: rgba(255,255,255, .09);
-  --background: 25 30% 8%;
+  --background: 250 30% 6%;
   --foreground: 0 0% 98%;
-  --border: 25 20% 16%;
-  --card: 25 25% 10%;
+  --border: 250 25% 14%;
+  --card: 250 30% 9%;
   --card-foreground: 0 0% 98%;
-  --card-border: 25 20% 14%;
-  --sidebar: 25 25% 12%;
+  --card-border: 250 25% 12%;
+  --sidebar: 250 30% 8%;
   --sidebar-foreground: 0 0% 95%;
-  --sidebar-border: 25 20% 15%;
-  --sidebar-primary: 25 55% 50%;
+  --sidebar-border: 250 25% 13%;
+  --sidebar-primary: 273 100% 63%;
   --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 25 20% 18%;
+  --sidebar-accent: 250 25% 14%;
   --sidebar-accent-foreground: 0 0% 98%;
-  --sidebar-ring: 25 55% 50%;
-  --popover: 25 25% 14%;
+  --sidebar-ring: 273 100% 63%;
+  --popover: 250 30% 10%;
   --popover-foreground: 0 0% 95%;
-  --popover-border: 25 20% 18%;
-  --primary: 25 55% 50%;
+  --popover-border: 250 25% 14%;
+  --primary: 273 100% 63%;
   --primary-foreground: 0 0% 100%;
-  --secondary: 25 18% 18%;
+  --secondary: 250 25% 14%;
   --secondary-foreground: 0 0% 98%;
-  --muted: 25 15% 20%;
-  --muted-foreground: 25 10% 65%;
-  --accent: 25 20% 16%;
+  --muted: 250 20% 16%;
+  --muted-foreground: 250 15% 60%;
+  --accent: 250 25% 12%;
   --accent-foreground: 0 0% 98%;
-  --destructive: 0 84% 30%;
+  --destructive: 0 84% 50%;
   --destructive-foreground: 0 0% 100%;
-  --input: 25 20% 25%;
-  --ring: 25 55% 50%;
-  --chart-1: 25 55% 60%;
-  --chart-2: 165 80% 60%;
+  --success: 155 100% 52%;
+  --success-foreground: 0 0% 0%;
+  --input: 250 25% 18%;
+  --ring: 273 100% 63%;
+  --chart-1: 273 100% 63%;
+  --chart-2: 155 100% 52%;
   --chart-3: 220 70% 65%;
-  --chart-4: 280 65% 70%;
-  --chart-5: 30 85% 60%;
-  --shadow-2xs: 0px 2px 0px 0px hsl(25 50% 4% / 0.20);
-  --shadow-xs: 0px 2px 0px 0px hsl(25 50% 4% / 0.25);
-  --shadow-sm: 0px 2px 0px 0px hsl(25 50% 4% / 0.25), 0px 1px 2px -1px hsl(25 50% 4% / 0.30);
-  --shadow: 0px 2px 0px 0px hsl(25 50% 4% / 0.25), 0px 1px 2px -1px hsl(25 50% 4% / 0.30);
-  --shadow-md: 0px 2px 0px 0px hsl(25 50% 4% / 0.30), 0px 2px 4px -1px hsl(25 50% 4% / 0.35);
-  --shadow-lg: 0px 2px 0px 0px hsl(25 50% 4% / 0.35), 0px 4px 6px -1px hsl(25 50% 4% / 0.40);
-  --shadow-xl: 0px 2px 0px 0px hsl(25 50% 4% / 0.40), 0px 8px 10px -1px hsl(25 50% 4% / 0.45);
-  --shadow-2xl: 0px 2px 0px 0px hsl(25 50% 4% / 0.50);
+  --chart-4: 350 70% 60%;
+  --chart-5: 45 85% 60%;
+  --shadow-2xs: 0px 2px 0px 0px hsl(273 50% 3% / 0.30);
+  --shadow-xs: 0px 2px 0px 0px hsl(273 50% 3% / 0.35);
+  --shadow-sm: 0px 2px 0px 0px hsl(273 50% 3% / 0.35), 0px 1px 2px -1px hsl(273 50% 3% / 0.40);
+  --shadow: 0px 2px 0px 0px hsl(273 50% 3% / 0.35), 0px 1px 2px -1px hsl(273 50% 3% / 0.40);
+  --shadow-md: 0px 2px 0px 0px hsl(273 50% 3% / 0.40), 0px 2px 4px -1px hsl(273 50% 3% / 0.45);
+  --shadow-lg: 0px 2px 0px 0px hsl(273 50% 3% / 0.45), 0px 4px 6px -1px hsl(273 50% 3% / 0.50);
+  --shadow-xl: 0px 2px 0px 0px hsl(273 50% 3% / 0.50), 0px 8px 10px -1px hsl(273 50% 3% / 0.55);
+  --shadow-2xl: 0px 2px 0px 0px hsl(273 50% 3% / 0.60);
 
 /* Fallback for older browsers */
   --sidebar-primary-border: hsl(var(--sidebar-primary));
@@ -287,6 +292,7 @@
   }
 }
 
+/* Steam animation for BaristaAvatar */
 @keyframes steam {
   0% {
     transform: translateY(0) translateX(0) scale(1);
@@ -302,15 +308,17 @@
   }
 }
 
+/* Pulse glow animation for floating bubble */
 @keyframes pulse-glow {
   0%, 100% {
-    box-shadow: 0 0 20px rgba(139, 90, 43, 0.3);
+    box-shadow: 0 0 20px rgba(153, 69, 255, 0.3);
   }
   50% {
-    box-shadow: 0 0 35px rgba(139, 90, 43, 0.5);
+    box-shadow: 0 0 35px rgba(153, 69, 255, 0.5);
   }
 }
 
+/* Bouncing dots for typing indicator */
 @keyframes bounce-dot {
   0%, 80%, 100% {
     transform: translateY(0);
@@ -320,6 +328,7 @@
   }
 }
 
+/* Message slide in animation */
 @keyframes message-slide-in {
   from {
     opacity: 0;
@@ -328,6 +337,52 @@
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+/* Chat window open animation */
+@keyframes chat-window-open {
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Chat window close animation */
+@keyframes chat-window-close {
+  from {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.9) translateY(20px);
+  }
+}
+
+/* Sparkle animation for floating bubble */
+@keyframes sparkle {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scale(1.2);
+  }
+}
+
+/* Float animation for floating bubble */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
   }
 }
 
@@ -355,4 +410,20 @@
 
 .animate-message-in {
   animation: message-slide-in 0.3s ease-out forwards;
+}
+
+.animate-chat-open {
+  animation: chat-window-open 0.3s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+}
+
+.animate-chat-close {
+  animation: chat-window-close 0.2s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+}
+
+.animate-sparkle {
+  animation: sparkle 2s ease-in-out infinite;
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
 }

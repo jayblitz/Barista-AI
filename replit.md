@@ -4,13 +4,15 @@
 Barista is an AI-powered chat assistant for Monday Trade, a decentralized perpetual futures trading platform on Monad blockchain. The assistant uses Grok AI (xAI) for natural language processing with RAG (Retrieval-Augmented Generation) for accurate answers about Monday Trade's features.
 
 ## Current State
-**Version 1.1 - UI Redesign Complete**
+**Version 1.2 - Purple Theme + Animations**
 - Full-stack chat widget with Grok AI integration
-- Warm coffee-brown Monday Trade branding theme (updated Jan 2026)
+- Purple Monday Trade branding theme matching app.monday.trade
+- System theme preference (auto dark/light mode based on OS)
+- Animated chat window with smooth open/close transitions
 - Two-column landing page with hero section and chat preview
 - RAG with manual knowledge entries
 - Redis caching for common queries
-- Beautiful animated Barista avatar with brown coffee theme
+- Beautiful animated Barista avatar with purple accent
 
 ## Architecture
 
@@ -64,7 +66,8 @@ Barista is an AI-powered chat assistant for Monday Trade, a decentralized perpet
 - `MONDAY_API_URL` - API base URL
 
 ## Recent Changes
-- **Jan 15, 2026**: UI redesign - Coffee brown theme, new landing page with hero + chat preview
+- **Jan 15, 2026**: Purple theme matching app.monday.trade, system theme preference, chat box animations
+- **Jan 15, 2026**: UI redesign - New landing page with hero + chat preview
 - **Jan 2026**: Upgraded to Grok-3-latest model with web_search and x_search tools
 - **Jan 2026**: Initial MVP with Grok AI, RAG, and chat UI
 
@@ -76,11 +79,12 @@ Barista is an AI-powered chat assistant for Monday Trade, a decentralized perpet
 - **Cache**: Upstash Redis
 
 ## Design System
-- Primary Color: Coffee Brown (#8B5A3B / hue 25)
-- Background: Cream/beige (#F8F5F2 / hue 35 30% 96%)
-- Cards: White (#FFFFFF)
-- Light theme default with dark mode support
+- Primary Color: Purple (#9945FF / hue 273)
+- Background Dark: Deep blue-black (hue 250 30% 6%)
+- Cards Dark: Dark blue-gray (hue 250 30% 9%)
+- Success Green: #14F195 (for indicators)
+- System theme default (follows OS preference)
 - Inter font family
 - Rounded corners (rounded-2xl for chat elements)
-- Animated steam particles on avatar with brown tint
-- Warm brown glow effects
+- Animated steam particles on avatar with purple tint
+- Purple glow effects with spring animations
