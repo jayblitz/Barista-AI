@@ -4,7 +4,6 @@ import { randomUUID } from "crypto";
 import { chatWithGrok, streamChatWithGrok, isConfigured as isGrokConfigured } from "./services/grok";
 import { queryKnowledge, healthCheck as ragHealthCheck, isConfigured as isRagConfigured } from "./services/vectorStore";
 import { getCachedResponse, setCachedResponse, healthCheck as cacheHealthCheck, isConfigured as isCacheConfigured } from "./services/cache";
-import { isConfigured as isMondayConfigured } from "./services/mondayApi";
 import { chatRequestSchema, feedbackSchema, type SuggestionPill, type ChatResponse } from "@shared/schema";
 
 const SUGGESTIONS: SuggestionPill[] = [
@@ -36,7 +35,6 @@ export async function registerRoutes(
         grok: isGrokConfigured() ? "configured" : "not_configured",
         rag: isRagConfigured() ? (ragStatus ? "connected" : "error") : "not_configured",
         cache: isCacheConfigured() ? (cacheStatus ? "connected" : "error") : "not_configured",
-        mondayApi: isMondayConfigured() ? "configured" : "not_configured",
       },
     });
   });

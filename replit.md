@@ -36,7 +36,6 @@ Barista is an AI-powered chat assistant for Monday Trade, a decentralized perpet
   - `grok.ts` - Grok AI integration via OpenAI SDK
   - `vectorStore.ts` - Pinecone RAG with manual knowledge
   - `cache.ts` - Redis/Upstash caching
-  - `mondayApi.ts` - Monday Trade API client (HMAC auth)
 
 ### API Endpoints
 - `POST /api/chat` - Standard chat endpoint
@@ -60,10 +59,6 @@ Barista is an AI-powered chat assistant for Monday Trade, a decentralized perpet
 - `PINECONE_INDEX` - Index name (barista-knowledge)
 - `UPSTASH_REDIS_REST_URL` - Redis URL
 - `UPSTASH_REDIS_REST_TOKEN` - Redis token
-- `MONDAY_API_KEY` - Monday Trade API (optional)
-- `MONDAY_SECRET_KEY` - HMAC secret (optional)
-- `MONDAY_PASSPHRASE` - API passphrase (optional)
-- `MONDAY_API_URL` - API base URL (optional)
 
 Note: OpenAI API key is no longer required - the app uses Grok for all AI features and manual knowledge for RAG.
 

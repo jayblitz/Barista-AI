@@ -23,21 +23,6 @@ export const insertChatMessageSchema = createInsertSchema(chatMessages).omit({
 export type InsertChatMessage = z.infer<typeof insertChatMessageSchema>;
 export type ChatMessage = typeof chatMessages.$inferSelect;
 
-// User table for wallet connections (future use)
-export const users = pgTable("users", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  walletAddress: text("wallet_address").unique(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-});
-
-export const insertUserSchema = createInsertSchema(users).omit({
-  id: true,
-  createdAt: true,
-});
-
-export type InsertUser = z.infer<typeof insertUserSchema>;
-export type User = typeof users.$inferSelect;
-
 // TypeScript interfaces for API communication
 export interface Citation {
   title: string;
@@ -54,7 +39,6 @@ export interface ToolsUsed {
 export interface ChatRequest {
   message: string;
   history?: MessageHistory[];
-  walletAddress?: string;
   sessionId?: string;
 }
 
@@ -102,7 +86,6 @@ export const chatRequestSchema = z.object({
     role: z.enum(['user', 'assistant']),
     content: z.string(),
   })).optional().default([]),
-  walletAddress: z.string().optional(),
   sessionId: z.string().optional(),
 });
 
