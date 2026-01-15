@@ -49,7 +49,7 @@ export function ChatWindow({
           transition={{ type: "spring", stiffness: 300, damping: 30 }}
           className="fixed bottom-24 right-6 w-96 h-[600px] bg-background border border-border rounded-2xl shadow-2xl flex flex-col overflow-hidden z-50"
           style={{
-            boxShadow: "0 25px 50px -12px rgba(153, 69, 255, 0.25)",
+            boxShadow: "0 25px 50px -12px rgba(139, 90, 59, 0.25)",
           }}
           data-testid="chat-window"
         >

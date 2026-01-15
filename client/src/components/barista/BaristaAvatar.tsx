@@ -32,12 +32,12 @@ export function BaristaAvatar({ size = "md", animate = true }: BaristaAvatarProp
       >
         <defs>
           <linearGradient id="coffeeGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#9945FF" />
-            <stop offset="100%" stopColor="#7B2FE0" />
+            <stop offset="0%" stopColor="#8B5A3B" />
+            <stop offset="100%" stopColor="#6B4423" />
           </linearGradient>
           <linearGradient id="cupGradient" x1="0%" y1="0%" x2="0%" y2="100%">
             <stop offset="0%" stopColor="#FFFFFF" />
-            <stop offset="100%" stopColor="#E8E8E8" />
+            <stop offset="100%" stopColor="#F5F5F5" />
           </linearGradient>
         </defs>
         
@@ -48,7 +48,7 @@ export function BaristaAvatar({ size = "md", animate = true }: BaristaAvatarProp
               cy="8"
               rx="2"
               ry="4"
-              fill="rgba(153, 69, 255, 0.4)"
+              fill="rgba(139, 90, 59, 0.4)"
               className="animate-steam"
             />
             <ellipse
@@ -56,7 +56,7 @@ export function BaristaAvatar({ size = "md", animate = true }: BaristaAvatarProp
               cy="6"
               rx="2.5"
               ry="5"
-              fill="rgba(153, 69, 255, 0.5)"
+              fill="rgba(139, 90, 59, 0.5)"
               className="animate-steam-delay-1"
             />
             <ellipse
@@ -64,7 +64,7 @@ export function BaristaAvatar({ size = "md", animate = true }: BaristaAvatarProp
               cy="8"
               rx="2"
               ry="4"
-              fill="rgba(153, 69, 255, 0.4)"
+              fill="rgba(139, 90, 59, 0.4)"
               className="animate-steam-delay-2"
             />
           </>
@@ -73,7 +73,7 @@ export function BaristaAvatar({ size = "md", animate = true }: BaristaAvatarProp
         <path
           d="M8 16 C8 14, 10 12, 14 12 L34 12 C38 12, 40 14, 40 16 L40 36 C40 42, 36 46, 28 46 L20 46 C12 46, 8 42, 8 36 Z"
           fill="url(#cupGradient)"
-          stroke="#D4D4D4"
+          stroke="#E5E5E5"
           strokeWidth="1"
         />
         
@@ -90,8 +90,8 @@ export function BaristaAvatar({ size = "md", animate = true }: BaristaAvatarProp
           fill="url(#coffeeGradient)"
         />
         
-        <circle cx="18" cy="26" r="2.5" fill="#0E0E1A" />
-        <circle cx="30" cy="26" r="2.5" fill="#0E0E1A" />
+        <circle cx="18" cy="26" r="2.5" fill="#2D1810" />
+        <circle cx="30" cy="26" r="2.5" fill="#2D1810" />
         
         <circle cx="19" cy="25" r="0.8" fill="white" />
         <circle cx="31" cy="25" r="0.8" fill="white" />
@@ -99,7 +99,7 @@ export function BaristaAvatar({ size = "md", animate = true }: BaristaAvatarProp
         <path
           d="M20 32 Q24 36, 28 32"
           fill="none"
-          stroke="#0E0E1A"
+          stroke="#2D1810"
           strokeWidth="2"
           strokeLinecap="round"
         />

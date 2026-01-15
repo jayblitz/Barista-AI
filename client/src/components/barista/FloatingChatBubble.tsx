@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { MessageCircle, X } from "lucide-react";
+import { X, Coffee, Sparkles } from "lucide-react";
 
 interface FloatingChatBubbleProps {
   isOpen: boolean;
@@ -12,7 +12,7 @@ export function FloatingChatBubble({ isOpen, onClick, hasUnread = false }: Float
     <motion.button
       type="button"
       onClick={onClick}
-      className="fixed bottom-6 right-6 w-16 h-16 rounded-full bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-xl flex items-center justify-center z-50 animate-pulse-glow"
+      className="fixed bottom-6 right-6 w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-xl flex items-center justify-center z-50 animate-pulse-glow"
       whileHover={{ scale: 1.05 }}
       whileTap={{ scale: 0.95 }}
       aria-label={isOpen ? "Close chat" : "Open chat"}
@@ -24,11 +24,11 @@ export function FloatingChatBubble({ isOpen, onClick, hasUnread = false }: Float
         transition={{ type: "spring", stiffness: 300, damping: 20 }}
       >
         {isOpen ? (
-          <X className="w-7 h-7" />
+          <X className="w-6 h-6" />
         ) : (
           <div className="relative">
-            <MessageCircle className="w-7 h-7" />
-            <span className="absolute -top-0.5 -right-0.5 text-lg">☕</span>
+            <Coffee className="w-6 h-6" />
+            <Sparkles className="w-3 h-3 absolute -top-1 -right-1 text-primary-foreground" />
           </div>
         )}
       </motion.div>
