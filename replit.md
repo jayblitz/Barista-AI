@@ -4,15 +4,16 @@
 Barista is an AI-powered chat assistant for Monday Trade, a decentralized perpetual futures trading platform on Monad blockchain. The assistant uses Grok AI (xAI) for natural language processing with RAG (Retrieval-Augmented Generation) for accurate answers about Monday Trade's features.
 
 ## Current State
-**Version 1.2 - Purple Theme + Animations**
+**Version 1.3 - Comprehensive Knowledge Base**
 - Full-stack chat widget with Grok AI integration
 - Purple Monday Trade branding theme matching app.monday.trade
 - System theme preference (auto dark/light mode based on OS)
 - Animated chat window with smooth open/close transitions
 - Two-column landing page with hero section and chat preview
-- RAG with manual knowledge entries
+- Comprehensive RAG with 14+ manual knowledge entries covering all docs.monday.trade content
+- Custom anime character avatar (attached_assets/2026-01-15_07.08.55_1768460960171.jpg)
 - Redis caching for common queries
-- Beautiful animated Barista avatar with purple accent
+- Documentation ingestion script for Pinecone updates
 
 ## Architecture
 
@@ -66,6 +67,9 @@ Barista is an AI-powered chat assistant for Monday Trade, a decentralized perpet
 - `MONDAY_API_URL` - API base URL
 
 ## Recent Changes
+- **Jan 15, 2026**: Expanded knowledge base with 14+ entries covering all docs.monday.trade content (fees, leverage, margin, liquidation, voyage points, wallets, trading pairs, etc.)
+- **Jan 15, 2026**: Created documentation ingestion script (server/scripts/ingestDocs.ts) for Pinecone updates
+- **Jan 15, 2026**: Custom anime character avatar replacing animated coffee cup
 - **Jan 15, 2026**: Purple theme matching app.monday.trade, system theme preference, chat box animations
 - **Jan 15, 2026**: UI redesign - New landing page with hero + chat preview
 - **Jan 2026**: Upgraded to Grok-3-latest model with web_search and x_search tools

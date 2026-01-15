@@ -57,19 +57,25 @@ Example: With 10x leverage, you need $1,000 margin to control a $10,000 position
   {
     id: "spot-fees",
     keywords: ["spot", "swap", "trade", "fee", "amm", "order book", "taker"],
-    content: `Monday Trade Spot Trading Fees:
+    content: `Monday Trade Spot Trading Fees (verified from docs.monday.trade):
 
 The platform uses a hybrid AMM + Order Book model:
 
-- Order Book Taker Fee: 0.03%
-- AMM Pool Fee: 0.3% (varies by pool)
+Order Book Fees:
+- Taker Fee: 0.03% (for all pools)
+- Maker Fee: 0% (limit orders)
 
-Example: Trading 1 WETH where 0.9 WETH fills via order book and 0.1 WETH via AMM:
-- Order book portion: 0.9 × 0.03% = 0.00027 WETH
-- AMM portion: 0.1 × 0.3% = 0.0003 WETH
-- Total fees: 0.00057 WETH
+AMM Fees (vary by pool):
+- MON/USDC: 0.05%
+- gMON/MON: 0.03%
+- WBTC/USDC: 0.3%
 
-The hybrid model optimizes for lowest total fees by routing through order book first.`
+Example: Trading 100 MON in a pool with 0.05% AMM fee. If 90 MON fills via order book and 10 MON via AMM:
+- Order book portion: 90 MON × 0.03% = 0.027 MON
+- AMM portion: 10 MON × 0.05% = 0.005 MON
+- Total fee: 0.032 MON
+
+The hybrid model routes through order book first for best pricing.`
   },
   {
     id: "access-wallets-kyc",
@@ -182,46 +188,52 @@ Consistency Bonus: Trade 7 consecutive days for bonus multiplier.
 Referral: Earn 20% of referred users' points.`
   },
   {
-    id: "stop-loss-take-profit",
-    keywords: ["stop", "loss", "sl", "tp", "take", "profit", "order", "close", "protect", "risk", "limit"],
-    content: `Stop Loss & Take Profit on Monday Trade:
+    id: "order-types",
+    keywords: ["stop", "loss", "sl", "tp", "take", "profit", "order", "close", "protect", "risk", "limit", "market", "type"],
+    content: `Order Types on Monday Trade (from docs.monday.trade):
 
-Order Types Available:
-- Market Orders: Execute immediately at best available price
-- Limit Orders: Execute at your specified price or better
-- Stop-Loss Orders: Automatically close position when price reaches stop level
-- Take-Profit Orders: Automatically close position when price reaches profit target
+Market Orders:
+- Trade with the perps engine directly
+- Counterparty can be limit orders or concentrated liquidity
+- Price impact estimated before trade
+- Limit price protects against adverse moves
 
-How to Set TP/SL:
-1. When opening a position, click "TP/SL"
-2. Enter your stop-loss price (below entry for longs, above for shorts)
-3. Enter your take-profit price (above entry for longs, below for shorts)
-4. Confirm the order
+Limit Orders:
+- Native limit orders similar to centralized exchanges
+- Defined at discrete price points
+- Become irreversible once filled
+- Tick-based pricing system (1.0001^n increments)
 
-You can modify TP/SL after opening from the Positions tab.
+Matching:
+- Limit orders filled before concentrated liquidity
+- Volume allocated proportionally across orders at same price
+- Overall slippage reduced when limit orders exist
 
-Best Practice: Always use stop-loss orders to manage risk, especially with leveraged positions.`
+Execution Fees:
+- Small fee paid when orders are settled on-chain
+- Compensates the address submitting the settlement transaction
+
+For risk management, monitor your positions and liquidation price carefully.`
   },
   {
     id: "trading-pairs",
     keywords: ["pair", "pairs", "trading", "markets", "btc", "eth", "mon", "usdc", "asset", "crypto", "available", "list"],
-    content: `Monday Trade Available Trading Pairs:
+    content: `Monday Trade Available Trading Pairs (verified from docs.monday.trade):
 
 Perpetual Futures:
-- BTC/USDC (10x leverage)
-- ETH/USDC (10x leverage)
-- MON/USDC (10x leverage)
+- BTC/USDC (10x leverage, 0.02% taker fee)
+- ETH/USDC (10x leverage, 0.02% taker fee)
+- MON/USDC (10x leverage, 0.02% taker fee)
 
-Spot Trading Pairs:
-- MON/USDC (0.05% and 0.3% fee tiers)
-- WBTC/USDC
-- WETH/USDC
-- gMON/MON
-- AUSD/earnAUSD
+Verified Spot Pools:
+- MON/USDC - 0.05% fee (0x8f889BA499C0A176Fb8F233D9D35b1c132eB868C)
+- MON/USDC - 0.3% fee (0x0a439a3a809dcfa8565625839f74368b0e7d0e3c)
+- gMON/MON - 0.03% fee
+- gMON/MON - 0.01% fee
+- AUSD/earnAUSD - 0.03% fee
+- WBTC/USDC - 0.3% fee
 
-Pool Creation: Users can create new liquidity pools for any ERC-20 token pair with minimal requirements.
-
-More pairs will be added based on community requirements.`
+Pool Creation: Users can create new liquidity pools for any ERC-20 token pair permissionlessly.`
   },
   {
     id: "monad-blockchain",
@@ -388,6 +400,15 @@ async function generateEmbedding(text: string): Promise<number[] | null> {
   }
 }
 
+const DEFAULT_OVERVIEW = `Monday Trade is Monad's native spot and perps DEX - a decentralized perpetual futures and spot trading platform. Key facts:
+- Non-custodial, permissionless, no KYC
+- Perpetual futures: BTC, ETH, MON vs USDC with 10x leverage
+- Perps fees: 0.02% taker, 0% maker
+- Spot fees: 0.03% order book taker, AMM varies (0.03%-0.3%)
+- Initial margin: 10%, Maintenance margin: 5%
+- Voyage Points program for rewards
+For specific questions, please ask about trading pairs, fees, leverage, margin, liquidation, wallets, or the Voyage Point program.`;
+
 function getManualKnowledge(query: string): string[] {
   const queryLower = query.toLowerCase();
   const relevantManual: string[] = [];
@@ -400,6 +421,10 @@ function getManualKnowledge(query: string): string[] {
     if (matchScore >= 1) {
       relevantManual.push(knowledge.content);
     }
+  }
+
+  if (relevantManual.length === 0) {
+    relevantManual.push(DEFAULT_OVERVIEW);
   }
 
   return Array.from(new Set(relevantManual));
