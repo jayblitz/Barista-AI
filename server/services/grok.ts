@@ -53,12 +53,14 @@ Monday Trade is a decentralized perpetual futures trading platform built on Mona
 - Docs: docs.monday.trade  
 - Twitter/X: @MondayTrade_
 
-## SEARCH TOOLS INSTRUCTIONS
-When the user asks about:
-- Latest tweets, posts, announcements, news, or updates → USE x_search with query "from:MondayTrade_" to get actual tweet content
-- Documentation, features, fees, mechanics → USE web_search with "site:docs.monday.trade [topic]"
+## LIVE SEARCH
+You have access to live_search which can search the web and X/Twitter in real-time.
 
-IMPORTANT: When using x_search, include the ACTUAL tweet text and date in your response, not just "let me check". The search results contain the real content.`;
+When the user asks about:
+- Latest tweets, posts, announcements, news, or updates → Search for "from:MondayTrade_" or "@MondayTrade_" to find actual tweets
+- Real-time information about Monday Trade → Use live search
+
+IMPORTANT: When searching for tweets, include the ACTUAL tweet text, date, and link in your response. Don't just say you're checking - provide the real content from search results.`;
 
 let grokClient: OpenAI | null = null;
 
@@ -79,10 +81,6 @@ function getGrokClient(): OpenAI | null {
   return grokClient;
 }
 
-const GROK_NATIVE_TOOLS = [
-  { type: "web_search" },
-  { type: "x_search" },
-];
 
 export async function chatWithGrok(
   message: string,
@@ -128,13 +126,23 @@ Or try again in a moment!`,
 
     console.log(`🔍 Grok query: "${message.substring(0, 60)}..."`);
 
-    const response = await client.chat.completions.create({
+    const requestBody: any = {
       model: "grok-3-latest",
       messages,
-      tools: GROK_NATIVE_TOOLS as any,
       max_tokens: 1000,
       temperature: 0.7,
-    });
+      search_parameters: {
+        mode: "auto",
+        sources: [
+          { type: "web" },
+          { type: "x" },
+          { type: "news" }
+        ],
+        return_citations: true,
+      }
+    };
+
+    const response = await client.chat.completions.create(requestBody);
 
     const assistantMessage = response.choices[0]?.message;
     const toolsUsed: Record<string, number> = {};
@@ -147,13 +155,13 @@ Or try again in a moment!`,
     for (const citation of responseCitations) {
       if (citation.url?.includes("x.com") || citation.url?.includes("twitter.com")) {
         allCitations.push({ title: citation.title || "X Post", url: citation.url, type: "x" });
-        toolsUsed.x_search = (toolsUsed.x_search || 0) + 1;
+        toolsUsed.live_search = (toolsUsed.live_search || 0) + 1;
       } else if (citation.url?.includes("monday.trade")) {
         allCitations.push({ title: citation.title || "Monday Trade", url: citation.url, type: "docs" });
-        toolsUsed.web_search = (toolsUsed.web_search || 0) + 1;
+        toolsUsed.live_search = (toolsUsed.live_search || 0) + 1;
       } else if (citation.url) {
         allCitations.push({ title: citation.title || "Web", url: citation.url, type: "web" });
-        toolsUsed.web_search = (toolsUsed.web_search || 0) + 1;
+        toolsUsed.live_search = (toolsUsed.live_search || 0) + 1;
       }
     }
 
@@ -248,14 +256,24 @@ export async function streamChatWithGrok(
     }
     messages.push({ role: "user", content: message });
 
-    const stream = await client.chat.completions.create({
+    const requestBody: any = {
       model: "grok-3-latest",
       messages,
-      tools: GROK_NATIVE_TOOLS as any,
       max_tokens: 1000,
       temperature: 0.7,
       stream: true,
-    });
+      search_parameters: {
+        mode: "auto",
+        sources: [
+          { type: "web" },
+          { type: "x" },
+          { type: "news" }
+        ],
+        return_citations: true,
+      }
+    };
+
+    const stream = await client.chat.completions.create(requestBody);
 
     let fullContent = "";
 
@@ -292,6 +310,6 @@ export function getStatus(): { configured: boolean; model: string; tools: string
   return {
     configured: isConfigured(),
     model: "grok-3-latest",
-    tools: ["web_search", "x_search"],
+    tools: ["live_search"],
   };
 }
