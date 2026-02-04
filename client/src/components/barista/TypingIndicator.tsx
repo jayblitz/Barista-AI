@@ -19,11 +19,11 @@ export function TypingIndicator({ toolInUse }: TypingIndicatorProps) {
   const getToolIcon = () => {
     switch (toolInUse) {
       case "web_search":
-        return "🔍";
+        return null; // Icon handled separately
       case "x_search":
-        return "🐦";
+        return null; // Icon handled separately
       default:
-        return "☕";
+        return null;
     }
   };
 

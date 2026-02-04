@@ -11,13 +11,13 @@ export function SourceCitations({ citations }: SourceCitationsProps) {
   const getTypeIcon = (type: Citation['type']) => {
     switch (type) {
       case 'docs':
-        return '📚';
+        return 'Docs';
       case 'x':
-        return '🐦';
+        return 'X';
       case 'web':
-        return '🌐';
+        return 'Web';
       default:
-        return '🔗';
+        return 'Link';
     }
   };
 

@@ -1,5 +1,5 @@
 import { useRef, useEffect, useLayoutEffect } from "react";
-import { X, Sparkles } from "lucide-react";
+import { X, Sparkles, User } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { BaristaAvatar } from "./BaristaAvatar";
@@ -7,6 +7,7 @@ import { Message } from "./Message";
 import { ChatInput } from "./ChatInput";
 import { SuggestionPills } from "./SuggestionPill";
 import { TypingIndicator } from "./TypingIndicator";
+import { LiveSupportChat } from "./LiveSupportChat";
 import type { UIMessage, SuggestionPill } from "@shared/schema";
 
 interface ChatWindowProps {
@@ -18,6 +19,11 @@ interface ChatWindowProps {
   onFeedback: (messageId: string, feedback: "positive" | "negative") => void;
   isLoading: boolean;
   toolInUse?: "web_search" | "x_search" | "thinking" | null;
+  onEscalate?: () => void;
+  isLiveSupport?: boolean;
+  supportThreadId?: string | null;
+  userAddress?: string;
+  onBackToAI?: () => void;
 }
 
 export function ChatWindow({
@@ -29,6 +35,11 @@ export function ChatWindow({
   onFeedback,
   isLoading,
   toolInUse,
+  onEscalate,
+  isLiveSupport = false,
+  supportThreadId,
+  userAddress = "",
+  onBackToAI,
 }: ChatWindowProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const bottomAnchorRef = useRef<HTMLDivElement>(null);
@@ -91,15 +102,21 @@ export function ChatWindow({
               <BaristaAvatar size="md" />
               <div>
                 <h2 className="text-base font-semibold text-card-foreground flex items-center gap-1.5" data-testid="chat-title">
-                  Barista
+                  {isLiveSupport ? "Live Support" : "Barista"}
                   <motion.span
                     animate={{ rotate: [0, 15, -15, 0] }}
                     transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
                   >
-                    <Sparkles className="w-4 h-4 text-primary" />
+                    {isLiveSupport ? (
+                      <User className="w-4 h-4 text-primary" />
+                    ) : (
+                      <Sparkles className="w-4 h-4 text-primary" />
+                    )}
                   </motion.span>
                 </h2>
-                <p className="text-xs text-muted-foreground" data-testid="chat-subtitle">Monday Trade Assistant</p>
+                <p className="text-xs text-muted-foreground" data-testid="chat-subtitle">
+                  {isLiveSupport ? "Connected to support team" : "Monday Trade Assistant"}
+                </p>
               </div>
             </div>
             <Button
@@ -114,85 +131,111 @@ export function ChatWindow({
             </Button>
           </motion.div>
 
-          <div 
-            ref={scrollContainerRef}
-            className="flex-1 overflow-y-auto p-4"
-            data-testid="chat-messages-scroll"
-          >
-            <div className="flex flex-col gap-4">
-              {messages.length === 0 && (
-                <motion.div 
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.2, type: "spring", stiffness: 300 }}
-                  className="flex flex-col items-center justify-center py-8 text-center" 
-                  data-testid="chat-empty-state"
-                >
-                  <BaristaAvatar size="lg" animate={true} />
-                  <h3 className="text-lg font-semibold mt-4 text-foreground" data-testid="empty-state-title">
-                    Hey there, trader!
-                  </h3>
-                  <p className="text-sm text-muted-foreground mt-1 max-w-[300px]" data-testid="empty-state-description">
-                    I'm Barista, your friendly Monday Trade guide. Ask me anything about trading, fees, leverage, or the latest updates - I'll brew up the answers!
-                  </p>
-                </motion.div>
-              )}
-              
-              {messages.map((message, index) => (
-                <motion.div
-                  key={message.id}
-                  initial={{ opacity: 0, y: 15, scale: 0.98 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  transition={{ 
-                    delay: index === messages.length - 1 ? 0.05 : 0,
-                    type: "spring",
-                    stiffness: 400,
-                    damping: 25
-                  }}
-                  onAnimationComplete={index === messages.length - 1 ? scrollToBottom : undefined}
-                >
-                  <Message message={message} onFeedback={onFeedback} />
-                </motion.div>
-              ))}
-              
-              {isLoading && (
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ type: "spring", stiffness: 400, damping: 25 }}
-                >
-                  <TypingIndicator toolInUse={toolInUse} />
-                </motion.div>
-              )}
-              
-              <div ref={bottomAnchorRef} className="h-1" aria-hidden="true" />
-            </div>
-          </div>
-
-          <motion.div 
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.15 }}
-            className="p-4 border-t border-border bg-card" 
-            data-testid="chat-footer"
-          >
-            {messages.length === 0 && (
-              <motion.div 
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.3 }}
-                className="mb-3" 
-                data-testid="suggestions-container"
+          {isLiveSupport && supportThreadId && onBackToAI ? (
+            <LiveSupportChat
+              threadId={supportThreadId}
+              userAddress={userAddress}
+              onBack={onBackToAI}
+            />
+          ) : (
+            <>
+              <div 
+                ref={scrollContainerRef}
+                className="flex-1 overflow-y-auto p-4"
+                data-testid="chat-messages-scroll"
               >
-                <SuggestionPills
-                  suggestions={suggestions}
-                  onSelect={onSendMessage}
-                  disabled={isLoading}
-                />
+                <div className="flex flex-col gap-4">
+                  {messages.length === 0 && (
+                    <motion.div 
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: 0.2, type: "spring", stiffness: 300 }}
+                      className="flex flex-col items-center justify-center py-8 text-center" 
+                      data-testid="chat-empty-state"
+                    >
+                      <BaristaAvatar size="lg" animate={true} />
+                      <h3 className="text-lg font-semibold mt-4 text-foreground" data-testid="empty-state-title">
+                        Hey there, trader!
+                      </h3>
+                      <p className="text-sm text-muted-foreground mt-1 max-w-[300px]" data-testid="empty-state-description">
+                        I'm Barista, your friendly Monday Trade guide. Ask me anything about trading, fees, leverage, or the latest updates - I'll brew up the answers!
+                      </p>
+                    </motion.div>
+                  )}
+                  
+                  {messages.map((message, index) => (
+                    <motion.div
+                      key={message.id}
+                      initial={{ opacity: 0, y: 15, scale: 0.98 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      transition={{ 
+                        delay: index === messages.length - 1 ? 0.05 : 0,
+                        type: "spring",
+                        stiffness: 400,
+                        damping: 25
+                      }}
+                      onAnimationComplete={index === messages.length - 1 ? scrollToBottom : undefined}
+                    >
+                      <Message message={message} onFeedback={onFeedback} />
+                    </motion.div>
+                  ))}
+                  
+                  {isLoading && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                    >
+                      <TypingIndicator toolInUse={toolInUse} />
+                    </motion.div>
+                  )}
+                  
+                  <div ref={bottomAnchorRef} className="h-1" aria-hidden="true" />
+                </div>
+              </div>
+
+              <motion.div 
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.15 }}
+                className="p-4 border-t border-border bg-card" 
+                data-testid="chat-footer"
+              >
+                {messages.length === 0 && (
+                  <motion.div 
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.3 }}
+                    className="mb-3" 
+                    data-testid="suggestions-container"
+                  >
+                    <SuggestionPills
+                      suggestions={suggestions}
+                      onSelect={onSendMessage}
+                      disabled={isLoading}
+                    />
+                  </motion.div>
+                )}
+                <div className="flex gap-2">
+                  <div className="flex-1">
+                    <ChatInput onSend={onSendMessage} disabled={isLoading} />
+                  </div>
+                  {onEscalate && (
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={onEscalate}
+                      className="rounded-full shrink-0 border-primary/30 hover:bg-primary/10"
+                      title="Talk to Human"
+                      data-testid="button-escalate"
+                    >
+                      <User className="w-4 h-4 text-primary" />
+                    </Button>
+                  )}
+                </div>
               </motion.div>
-            )}
-            <ChatInput onSend={onSendMessage} disabled={isLoading} />
-          </motion.div>
+            </>
+          )}
         </motion.div>
       )}
     </AnimatePresence>

@@ -354,9 +354,9 @@ function getPineconeClient(): Pinecone | null {
       pineconeClient = new Pinecone({
         apiKey: process.env.PINECONE_API_KEY,
       });
-      console.log("✅ Pinecone client initialized");
+      console.log("[OK] Pinecone client initialized");
     } catch (error) {
-      console.error("❌ Failed to initialize Pinecone:", error);
+      console.error("[ERROR] Failed to initialize Pinecone:", error);
       return null;
     }
   }
@@ -407,7 +407,7 @@ export async function queryKnowledge(query: string): Promise<string | null> {
     if (manualContext.length === 0) {
       return null;
     }
-    console.log(`📚 Found ${manualContext.length} manual knowledge entries`);
+    console.log(`[INFO] Found ${manualContext.length} manual knowledge entries`);
     return manualContext.join("\n\n---\n\n");
   }
 
@@ -426,7 +426,7 @@ export async function queryKnowledge(query: string): Promise<string | null> {
     });
 
     if (!results.matches || results.matches.length === 0) {
-      console.log("📭 No Pinecone matches found");
+      console.log("[INFO] No Pinecone matches found");
       return manualContext.length > 0 ? manualContext.join("\n\n---\n\n") : null;
     }
 
@@ -435,11 +435,11 @@ export async function queryKnowledge(query: string): Promise<string | null> {
     );
 
     if (relevantDocs.length === 0) {
-      console.log("📭 No high-confidence Pinecone matches");
+      console.log("[INFO] No high-confidence Pinecone matches");
       return manualContext.length > 0 ? manualContext.join("\n\n---\n\n") : null;
     }
 
-    console.log(`📚 Found ${relevantDocs.length} Pinecone documents + ${manualContext.length} manual entries`);
+    console.log(`[INFO] Found ${relevantDocs.length} Pinecone documents + ${manualContext.length} manual entries`);
 
     const pineconeContext = relevantDocs
       .map((doc, i) => {
@@ -457,7 +457,7 @@ ${url ? `(Reference: ${url})` : ""}`;
     return allContext.join("\n\n---\n\n");
 
   } catch (error) {
-    console.error("❌ RAG query error:", error);
+    console.error("[ERROR] RAG query error:", error);
     return manualContext.length > 0 ? manualContext.join("\n\n---\n\n") : null;
   }
 }
@@ -471,10 +471,10 @@ export async function healthCheck(): Promise<boolean> {
   try {
     const index = pinecone.Index(PINECONE_INDEX_NAME);
     const stats = await index.describeIndexStats();
-    console.log(`📊 Pinecone: ${stats.totalRecordCount || 0} vectors`);
+    console.log(`[STATS] Pinecone: ${stats.totalRecordCount || 0} vectors`);
     return true;
   } catch (error) {
-    console.error("❌ Pinecone health check failed:", error);
+    console.error("[ERROR] Pinecone health check failed:", error);
     return false;
   }
 }
@@ -523,9 +523,9 @@ export async function upsertDocument(
         metadata: { ...metadata, content },
       },
     ]);
-    console.log(`✅ Upserted document: ${id}`);
+    console.log(`[OK] Upserted document: ${id}`);
   } catch (error) {
-    console.error("❌ Pinecone upsert error:", error);
+    console.error("[ERROR] Pinecone upsert error:", error);
   }
 }
 

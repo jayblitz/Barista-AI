@@ -1,11 +1,12 @@
 # Barista - Monday Trade AI Assistant
 
 ## Overview
-Barista is an AI-powered chat assistant for Monday Trade, a decentralized perpetual futures trading platform on Monad blockchain. The assistant uses Grok AI (xAI) for natural language processing with RAG (Retrieval-Augmented Generation) for accurate answers about Monday Trade's features.
+Barista is an AI-powered chat assistant for Monday Trade, a decentralized perpetual futures trading platform on Monad blockchain. The assistant uses Grok AI (xAI) for natural language processing with RAG (Retrieval-Augmented Generation) for accurate answers about Monday Trade's features. Users can escalate to live human support when needed.
 
 ## Current State
-**Version 1.3 - Comprehensive Knowledge Base**
+**Version 1.4 - Live Support Escalation**
 - Full-stack chat widget with Grok AI integration
+- **Two-way live support escalation system** with agent dashboard
 - Purple Monday Trade branding theme matching app.monday.trade
 - System theme preference (auto dark/light mode based on OS)
 - Animated chat window with smooth open/close transitions
@@ -13,15 +14,16 @@ Barista is an AI-powered chat assistant for Monday Trade, a decentralized perpet
 - Comprehensive RAG with 14+ manual knowledge entries covering all docs.monday.trade content
 - Custom anime character avatar (attached_assets/2026-01-15_07.08.55_1768460960171.jpg)
 - Redis caching for common queries
+- Email notifications via Resend for new support threads
 - Documentation ingestion script for Pinecone updates
 
 ## Architecture
 
 ### Frontend (React + Vite)
 - **Components**: Located in `client/src/components/barista/`
-  - `BaristaChat.tsx` - Main chat container with state management
+  - `BaristaChat.tsx` - Main chat container with state management and escalation logic
   - `BaristaAvatar.tsx` - Animated coffee cup SVG with steam
-  - `ChatWindow.tsx` - Chat window with header, messages, input
+  - `ChatWindow.tsx` - Chat window with header, messages, input; conditionally shows LiveSupportChat
   - `ChatInput.tsx` - Text input with send button
   - `Message.tsx` - Message bubbles with formatting
   - `FloatingChatBubble.tsx` - Coffee brown floating button with sparkle
@@ -30,19 +32,35 @@ Barista is an AI-powered chat assistant for Monday Trade, a decentralized perpet
   - `SourceCitations.tsx` - Source links display
   - `FeedbackButtons.tsx` - Thumbs up/down
   - `ThemeToggle.tsx` - Dark/light mode toggle
+  - `LiveSupportChat.tsx` - Real-time live support messaging interface
+
+- **Pages**: Located in `client/src/pages/`
+  - `agent.tsx` - Agent dashboard for support team to view and respond to threads
 
 ### Backend (Express + TypeScript)
 - **Services**: Located in `server/services/`
   - `grok.ts` - Grok AI integration via OpenAI SDK
   - `vectorStore.ts` - Pinecone RAG with manual knowledge
   - `cache.ts` - Redis/Upstash caching
+  - `support.ts` - Support thread management (create, read, message, resolve)
+  - `email.ts` - Email notifications via Resend
 
 ### API Endpoints
+
+**Chat Endpoints:**
 - `POST /api/chat` - Standard chat endpoint
 - `POST /api/chat/stream` - SSE streaming endpoint
 - `GET /api/chat/suggestions` - Suggestion pills
 - `POST /api/chat/feedback` - Submit message feedback
 - `GET /api/health` - Health check
+
+**Support Endpoints:**
+- `POST /api/support/threads` - Create new support thread (triggers email notification)
+- `GET /api/support/threads` - List threads (requires x-agent-address header)
+- `GET /api/support/threads/:threadId` - Get thread with messages
+- `POST /api/support/threads/:threadId/messages` - Add message to thread
+- `POST /api/support/threads/:threadId/resolve` - Mark thread as resolved
+- `GET /api/support/config` - Get support configuration (wallet address, email status)
 
 ## Key Features
 1. **Barista Personality** - Friendly, coffee-themed AI assistant
@@ -51,6 +69,9 @@ Barista is an AI-powered chat assistant for Monday Trade, a decentralized perpet
 4. **Feedback System** - Thumbs up/down on responses
 5. **Caching** - Redis caching for common queries (optional)
 6. **Dark/Light Theme** - System theme preference (auto dark/light mode)
+7. **Live Support Escalation** - Users can escalate to human support via "Talk to Human" button
+8. **Agent Dashboard** - Support team can view and respond to escalated threads at /agent
+9. **Email Notifications** - New support threads trigger email alerts via Resend
 
 ## Environment Variables Required
 - `XAI_API_KEY` - Grok API key (powers both chat and live search)
@@ -58,10 +79,12 @@ Barista is an AI-powered chat assistant for Monday Trade, a decentralized perpet
 - `PINECONE_INDEX` - Index name (barista-knowledge)
 - `UPSTASH_REDIS_REST_URL` - Redis URL
 - `UPSTASH_REDIS_REST_TOKEN` - Redis token
+- `RESEND_API_KEY` - Resend email service for support notifications
 
 Note: OpenAI API key is no longer required - the app uses Grok for all AI features and manual knowledge for RAG.
 
 ## Recent Changes
+- **Feb 4, 2026**: Added live support escalation system with agent dashboard, email notifications, and two-way messaging
 - **Feb 4, 2026**: Updated to grok-3 model (grok-2-1212 deprecated). Live search temporarily disabled pending xAI Agent Tools API migration
 - **Jan 15, 2026**: Fixed live search - switched from invalid tool types to xAI's `search_parameters` API for real-time X/Twitter and web search
 - **Jan 15, 2026**: Expanded knowledge base with 14+ entries covering all docs.monday.trade content (fees, leverage, margin, liquidation, voyage points, wallets, trading pairs, etc.)

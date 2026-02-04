@@ -420,15 +420,15 @@ async function generateEmbedding(text: string, openai: OpenAI): Promise<number[]
 }
 
 async function ingestDocs() {
-  console.log("🚀 Starting Monday Trade documentation ingestion...\n");
+  console.log("[START] Monday Trade documentation ingestion...\n");
 
   if (!process.env.PINECONE_API_KEY) {
-    console.error("❌ PINECONE_API_KEY is required");
+    console.error("[ERROR] PINECONE_API_KEY is required");
     process.exit(1);
   }
 
   if (!process.env.OPENAI_API_KEY) {
-    console.error("❌ OPENAI_API_KEY is required for embeddings");
+    console.error("[ERROR] OPENAI_API_KEY is required for embeddings");
     process.exit(1);
   }
 
@@ -469,15 +469,15 @@ async function ingestDocs() {
         });
 
         totalChunks++;
-        process.stdout.write(`  ✓ Chunk ${i + 1}/${chunks.length}\r`);
+        process.stdout.write(`  [OK] Chunk ${i + 1}/${chunks.length}\r`);
       } catch (error) {
-        console.error(`  ❌ Failed to embed chunk ${i}:`, error);
+        console.error(`  [ERROR] Failed to embed chunk ${i}:`, error);
       }
     }
-    console.log(`  ✅ ${chunks.length} chunks processed`);
+    console.log(`  [OK] ${chunks.length} chunks processed`);
   }
 
-  console.log(`\n📤 Upserting ${allVectors.length} vectors to Pinecone...`);
+  console.log(`\n[UPLOAD] Upserting ${allVectors.length} vectors to Pinecone...`);
   
   const batchSize = 100;
   for (let i = 0; i < allVectors.length; i += batchSize) {
@@ -487,7 +487,7 @@ async function ingestDocs() {
   }
 
   const stats = await index.describeIndexStats();
-  console.log(`\n✅ Ingestion complete!`);
+  console.log(`\n[DONE] Ingestion complete!`);
   console.log(`   Total documents: ${MONDAY_TRADE_DOCS.length}`);
   console.log(`   Total chunks: ${totalChunks}`);
   console.log(`   Pinecone vectors: ${stats.totalRecordCount || 0}`);

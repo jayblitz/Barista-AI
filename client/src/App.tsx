@@ -6,12 +6,14 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/home";
+import AgentDashboard from "@/pages/agent";
 import { initializeTheme } from "@/components/ThemeToggle";
 
 function Router() {
   return (
     <Switch>
       <Route path="/" component={Home} />
+      <Route path="/agent" component={AgentDashboard} />
       <Route component={NotFound} />
     </Switch>
   );

@@ -5,21 +5,34 @@ import { ChatWindow } from "./ChatWindow";
 import type { UIMessage, ChatResponse, SuggestionPill, MessageHistory } from "@shared/schema";
 
 const DEFAULT_SUGGESTIONS: SuggestionPill[] = [
-  { text: "What is Monday Trade?", emoji: "🚀" },
-  { text: "Do I need an invite code?", emoji: "🔑" },
-  { text: "Trading fees?", emoji: "💰" },
-  { text: "Latest announcements", emoji: "📢" },
-  { text: "How to set stop loss?", emoji: "🛡️" },
-  { text: "Voyage Points?", emoji: "⭐" },
-  { text: "Max leverage?", emoji: "📊" },
-  { text: "Supported wallets?", emoji: "👛" },
+  { text: "What is Monday Trade?" },
+  { text: "Do I need an invite code?" },
+  { text: "Trading fees?" },
+  { text: "Latest announcements" },
+  { text: "How to set stop loss?" },
+  { text: "Voyage Points?" },
+  { text: "Max leverage?" },
+  { text: "Supported wallets?" },
 ];
+
+const ESCALATION_KEYWORDS = [
+  "human", "support", "help me", "real person", "agent", "talk to someone",
+  "speak to someone", "live chat", "customer service", "representative"
+];
+
+function shouldEscalate(message: string): boolean {
+  const lowerMessage = message.toLowerCase();
+  return ESCALATION_KEYWORDS.some(keyword => lowerMessage.includes(keyword));
+}
 
 export function BaristaChat() {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<UIMessage[]>([]);
   const [toolInUse, setToolInUse] = useState<"web_search" | "x_search" | "thinking" | null>(null);
   const [sessionId, setSessionId] = useState<string | undefined>(undefined);
+  const [isLiveSupport, setIsLiveSupport] = useState(false);
+  const [supportThreadId, setSupportThreadId] = useState<string | null>(null);
+  const [userAddress, setUserAddress] = useState<string>("");
 
   const { data: suggestions = DEFAULT_SUGGESTIONS } = useQuery<SuggestionPill[]>({
     queryKey: ["/api/chat/suggestions"],
@@ -70,7 +83,7 @@ export function BaristaChat() {
       const errorMessage: UIMessage = {
         id: crypto.randomUUID(),
         role: "assistant",
-        content: "Oops! Something went wrong while brewing your answer. Please try again! ☕",
+        content: "Oops! Something went wrong while brewing your answer. Please try again!",
         feedback: null,
         timestamp: new Date(),
       };
@@ -89,8 +102,58 @@ export function BaristaChat() {
     
     const updatedMessages = [...messages, userMessage];
     setMessages(updatedMessages);
+    
+    // Check if user wants to escalate to human support
+    if (shouldEscalate(content)) {
+      // Add system message about escalation
+      const escalationMessage: UIMessage = {
+        id: crypto.randomUUID(),
+        role: "assistant",
+        content: "I'd be happy to connect you with our support team! Click the \"Talk to Human\" button below to start a live chat.",
+        feedback: null,
+        timestamp: new Date(),
+      };
+      setMessages([...updatedMessages, escalationMessage]);
+      return;
+    }
+    
     chatMutation.mutate({ message: content, currentMessages: updatedMessages });
   }, [chatMutation, messages]);
+
+  const handleEscalate = useCallback(async () => {
+    // Generate a simple user address for now (in production, use wallet connect)
+    const tempAddress = userAddress || `0x${crypto.randomUUID().replace(/-/g, '').slice(0, 40)}`;
+    setUserAddress(tempAddress);
+
+    try {
+      const chatHistory = messages.map(m => ({
+        role: m.role,
+        content: m.content,
+      }));
+
+      const res = await fetch("/api/support/threads", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userAddress: tempAddress,
+          message: "User requested live support",
+          chatHistory,
+        }),
+      });
+
+      if (res.ok) {
+        const thread = await res.json();
+        setSupportThreadId(thread.id);
+        setIsLiveSupport(true);
+      }
+    } catch (error) {
+      console.error("Escalation error:", error);
+    }
+  }, [messages, userAddress]);
+
+  const handleBackToAI = useCallback(() => {
+    setIsLiveSupport(false);
+  }, []);
 
   const handleFeedback = useCallback((messageId: string, feedback: "positive" | "negative") => {
     setMessages((prev) =>
@@ -119,6 +182,11 @@ export function BaristaChat() {
         messages={messages}
         suggestions={suggestions}
         onSendMessage={handleSendMessage}
+        onEscalate={handleEscalate}
+        isLiveSupport={isLiveSupport}
+        supportThreadId={supportThreadId}
+        userAddress={userAddress}
+        onBackToAI={handleBackToAI}
         onFeedback={handleFeedback}
         isLoading={chatMutation.isPending}
         toolInUse={toolInUse}

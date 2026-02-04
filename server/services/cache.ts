@@ -16,9 +16,9 @@ function getRedisClient(): Redis | null {
         url: process.env.UPSTASH_REDIS_REST_URL,
         token: process.env.UPSTASH_REDIS_REST_TOKEN,
       });
-      console.log("✅ Redis cache initialized");
+      console.log("[OK] Redis cache initialized");
     } catch (error) {
-      console.error("❌ Failed to initialize Redis:", error);
+      console.error("[ERROR] Failed to initialize Redis:", error);
       return null;
     }
   }
@@ -47,13 +47,13 @@ export async function getCachedResponse(message: string): Promise<string | null>
     const cached = await redis.get<string>(key);
     
     if (cached) {
-      console.log(`📦 Cache hit for: "${message.substring(0, 30)}..."`);
+      console.log(`[CACHE HIT] "${message.substring(0, 30)}..."`);
       return cached;
     }
     
     return null;
   } catch (error) {
-    console.error("❌ Cache get error:", error);
+    console.error("[ERROR] Cache get error:", error);
     return null;
   }
 }
@@ -70,9 +70,9 @@ export async function setCachedResponse(
   try {
     const key = generateCacheKey(message);
     await redis.set(key, response, { ex: CACHE_TTL });
-    console.log(`💾 Cached response for: "${message.substring(0, 30)}..."`);
+    console.log(`[CACHE SET] "${message.substring(0, 30)}..."`);
   } catch (error) {
-    console.error("❌ Cache set error:", error);
+    console.error("[ERROR] Cache set error:", error);
   }
 }
 
@@ -121,7 +121,7 @@ export async function healthCheck(): Promise<boolean> {
     await redis.ping();
     return true;
   } catch (error) {
-    console.error("❌ Redis health check failed:", error);
+    console.error("[ERROR] Redis health check failed:", error);
     return false;
   }
 }

@@ -31,9 +31,9 @@ export function Message({ message, onFeedback }: MessageProps) {
   const getToolIndicator = () => {
     if (!message.toolsUsed) return null;
     const tools: string[] = [];
-    if (message.toolsUsed.web_search) tools.push("🔍 Web");
-    if (message.toolsUsed.x_search) tools.push("🐦 X");
-    if (message.toolsUsed.rag) tools.push("📚 Docs");
+    if (message.toolsUsed.web_search) tools.push("Web Search");
+    if (message.toolsUsed.x_search) tools.push("X Search");
+    if (message.toolsUsed.rag) tools.push("Docs");
     if (tools.length === 0) return null;
     return tools.join(" • ");
   };

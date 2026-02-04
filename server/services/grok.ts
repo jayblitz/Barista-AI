@@ -15,16 +15,16 @@ export interface GrokResponse {
   toolsUsed: Record<string, number>;
 }
 
-const BARISTA_SYSTEM_PROMPT = `You are Barista ☕, the delightfully whimsical AI assistant for Monday Trade - a decentralized perpetual futures trading platform built on Monad blockchain.
+const BARISTA_SYSTEM_PROMPT = `You are Barista, the friendly AI assistant for Monday Trade - a decentralized perpetual futures trading platform built on Monad blockchain.
 
 ## YOUR PERSONALITY
-- You're like a friendly, slightly magical barista at a cozy coffee shop where crypto traders gather
+- You're like a friendly, knowledgeable barista at a cozy coffee shop where crypto traders gather
 - Warm, enthusiastic, and genuinely excited to help - sprinkle your responses with charm and personality
-- Open with a playful, engaging phrase that reflects your barista persona (e.g., "Ah, let me brew up some knowledge for you! ☕✨")
+- Open with a playful, engaging phrase that reflects your barista persona (e.g., "Ah, let me brew up some knowledge for you!")
 - Use coffee-themed metaphors naturally: "percolating through the docs", "let me grind through this", "freshly brewed info"
-- Emojis add warmth: ☕ 🚀 ✨ 💜 🔥 📈 - use them to punctuate your enthusiasm
 - Keep it conversational and flowing - like you're chatting with a regular at your coffee counter
 - End with something inviting like "Anything else I can whip up for you?" or "Ready to pour more knowledge?"
+- Do NOT use emojis in your responses
 
 ## WHAT IS MONDAY TRADE (USE THIS FOR BASIC QUESTIONS)
 Monday Trade is a decentralized perpetual futures trading platform built on Monad blockchain. It enables non-custodial, permissionless trading of crypto perpetual contracts with up to 10x leverage. Key features:
@@ -68,7 +68,7 @@ let grokClient: OpenAI | null = null;
 
 function getGrokClient(): OpenAI | null {
   if (!process.env.XAI_API_KEY) {
-    console.log("⚠️ XAI_API_KEY not configured");
+    console.log("[WARN] XAI_API_KEY not configured");
     return null;
   }
 
@@ -77,7 +77,7 @@ function getGrokClient(): OpenAI | null {
       apiKey: process.env.XAI_API_KEY,
       baseURL: "https://api.x.ai/v1",
     });
-    console.log("✅ Grok client initialized");
+    console.log("[OK] Grok client initialized");
   }
 
   return grokClient;
@@ -93,12 +93,12 @@ export async function chatWithGrok(
 
   if (!client) {
     return {
-      content: `I'm having trouble connecting right now. ☕
+      content: `I'm having trouble connecting right now.
 
 Please check these resources directly:
-• **Docs**: docs.monday.trade
-• **App**: app.monday.trade
-• **Twitter**: @MondayTrade_
+- **Docs**: docs.monday.trade
+- **App**: app.monday.trade
+- **Twitter**: @MondayTrade_
 
 Or try again in a moment!`,
       citations: [],
@@ -126,7 +126,7 @@ Or try again in a moment!`,
 
     messages.push({ role: "user", content: message });
 
-    console.log(`🔍 Grok query: "${message.substring(0, 60)}..."`);
+    console.log(`[QUERY] Grok query: "${message.substring(0, 60)}..."`);
 
     const requestBody: any = {
       model: "grok-3",
@@ -161,11 +161,11 @@ Or try again in a moment!`,
 
     if (!content) {
       return {
-        content: `I couldn't find that information. ☕
+        content: `I couldn't find that information.
 
 Try checking:
-• **Docs**: docs.monday.trade
-• **Twitter**: @MondayTrade_
+- **Docs**: docs.monday.trade
+- **Twitter**: @MondayTrade_
 
 What else can I help with?`,
         citations: [],
@@ -184,15 +184,15 @@ What else can I help with?`,
     };
 
   } catch (error) {
-    console.error("❌ Grok API error:", error);
+    console.error("[ERROR] Grok API error:", error);
     
     return {
-      content: `Oops! Something went wrong. ☕
+      content: `Oops! Something went wrong.
 
 Please try again, or check:
-• **Docs**: docs.monday.trade
-• **App**: app.monday.trade
-• **Twitter**: @MondayTrade_`,
+- **Docs**: docs.monday.trade
+- **App**: app.monday.trade
+- **Twitter**: @MondayTrade_`,
       citations: [],
       toolsUsed: { error: 1 },
     };
@@ -210,9 +210,9 @@ export async function streamChatWithGrok(
   const citations: GrokResponse["citations"] = [];
 
   if (!client) {
-    onChunk("I'm having trouble connecting. Please try again or visit docs.monday.trade ☕");
+    onChunk("I'm having trouble connecting. Please try again or visit docs.monday.trade");
     return {
-      content: "I'm having trouble connecting. Please try again or visit docs.monday.trade ☕",
+      content: "I'm having trouble connecting. Please try again or visit docs.monday.trade",
       citations: [],
       toolsUsed: { error: 1 },
     };
@@ -255,16 +255,16 @@ export async function streamChatWithGrok(
     }
 
     return {
-      content: fullContent || "I apologize, I couldn't generate a response. Please try again! ☕",
+      content: fullContent || "I apologize, I couldn't generate a response. Please try again!",
       citations,
       toolsUsed,
     };
 
   } catch (error) {
-    console.error("❌ Grok streaming error:", error);
-    onChunk("Something went wrong. Please try again or visit docs.monday.trade ☕");
+    console.error("[ERROR] Grok streaming error:", error);
+    onChunk("Something went wrong. Please try again or visit docs.monday.trade");
     return {
-      content: "Something went wrong. Please try again or visit docs.monday.trade ☕",
+      content: "Something went wrong. Please try again or visit docs.monday.trade",
       citations: [],
       toolsUsed: { error: 1 },
     };
