@@ -63,6 +63,7 @@ Barista is an AI-powered chat assistant for Monday Trade, a decentralized perpet
 Note: OpenAI API key is no longer required - the app uses Grok for all AI features and manual knowledge for RAG.
 
 ## Recent Changes
+- **Feb 4, 2026**: Updated to grok-3 model (grok-2-1212 deprecated). Live search temporarily disabled pending xAI Agent Tools API migration
 - **Jan 15, 2026**: Fixed live search - switched from invalid tool types to xAI's `search_parameters` API for real-time X/Twitter and web search
 - **Jan 15, 2026**: Expanded knowledge base with 14+ entries covering all docs.monday.trade content (fees, leverage, margin, liquidation, voyage points, wallets, trading pairs, etc.)
 - **Jan 15, 2026**: Created documentation ingestion script (server/scripts/ingestDocs.ts) for Pinecone updates
@@ -75,9 +76,9 @@ Note: OpenAI API key is no longer required - the app uses Grok for all AI featur
 ## Tech Stack
 - **Frontend**: React 18, Tailwind CSS, Framer Motion, Shadcn UI
 - **Backend**: Express.js, TypeScript
-- **AI**: Grok API (grok-3-latest model with search_parameters for live search)
+- **AI**: Grok API (grok-3 model with RAG knowledge base)
 - **Vector DB**: Pinecone
-- **Cache**: Upstash Redis
+- **Cache**: Upstash Redis (optional)
 
 ## Design System
 - Primary Color: Purple (#9945FF / hue 273)

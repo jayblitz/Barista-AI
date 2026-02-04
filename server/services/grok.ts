@@ -55,14 +55,14 @@ Monday Trade is a decentralized perpetual futures trading platform built on Mona
 - Docs: docs.monday.trade  
 - Twitter/X: @MondayTrade_
 
-## LIVE SEARCH
-You have access to live_search which can search the web and X/Twitter in real-time.
+## KNOWLEDGE SOURCE
+You answer questions using the context provided from the Monday Trade documentation.
 
 When the user asks about:
-- Latest tweets, posts, announcements, news, or updates → Search for "from:MondayTrade_" or "@MondayTrade_" to find actual tweets
-- Real-time information about Monday Trade → Use live search
+- Latest tweets, posts, announcements, or news → Direct them to check @MondayTrade_ on X/Twitter for the latest updates
+- Real-time prices or current events → Suggest they check app.monday.trade for live data
 
-IMPORTANT: When searching for tweets, include the ACTUAL tweet text, date, and link in your response. Don't just say you're checking - provide the real content from search results.`;
+Focus on providing accurate information from the documentation context provided.`;
 
 let grokClient: OpenAI | null = null;
 
@@ -129,19 +129,10 @@ Or try again in a moment!`,
     console.log(`🔍 Grok query: "${message.substring(0, 60)}..."`);
 
     const requestBody: any = {
-      model: "grok-3-latest",
+      model: "grok-3",
       messages,
-      max_tokens: 1000,
+      max_tokens: 2000,
       temperature: 0.7,
-      search_parameters: {
-        mode: "auto",
-        sources: [
-          { type: "web" },
-          { type: "x" },
-          { type: "news" }
-        ],
-        return_citations: true,
-      }
     };
 
     const response = await client.chat.completions.create(requestBody);
@@ -283,20 +274,11 @@ export async function streamChatWithGrok(
     messages.push({ role: "user", content: message });
 
     const requestBody: any = {
-      model: "grok-3-latest",
+      model: "grok-3",
       messages,
-      max_tokens: 1000,
+      max_tokens: 2000,
       temperature: 0.7,
       stream: true,
-      search_parameters: {
-        mode: "auto",
-        sources: [
-          { type: "web" },
-          { type: "x" },
-          { type: "news" }
-        ],
-        return_citations: true,
-      }
     };
 
     const stream = await client.chat.completions.create(requestBody) as unknown as AsyncIterable<any>;
@@ -335,7 +317,7 @@ export function isConfigured(): boolean {
 export function getStatus(): { configured: boolean; model: string; tools: string[] } {
   return {
     configured: isConfigured(),
-    model: "grok-3-latest",
-    tools: ["live_search"],
+    model: "grok-3",
+    tools: ["rag"],
   };
 }
