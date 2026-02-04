@@ -1,6 +1,10 @@
 import OpenAI from "openai";
 import { spawn } from "child_process";
 import path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 interface ChatMessage {
   role: "user" | "assistant";
@@ -44,17 +48,54 @@ function isLiveSearchQuery(message: string): boolean {
   return searchKeywords.some((keyword) => lowerMessage.includes(keyword));
 }
 
+function truncateToTwoSentences(text: string): string {
+  const citationPattern = /\[\[\d+\]\]\([^)]+\)/g;
+  const placeholders: string[] = [];
+  let tempText = text.replace(citationPattern, (match) => {
+    placeholders.push(match);
+    return `__CITE_${placeholders.length - 1}__`;
+  });
+  
+  const sentences = tempText.match(/[^.!?]*[.!?]+/g) || [tempText];
+  let result = sentences.slice(0, 2).join(" ").trim();
+  
+  placeholders.forEach((citation, index) => {
+    result = result.replace(`__CITE_${index}__`, citation);
+  });
+  
+  return result;
+}
+
+function stripMarkdown(text: string): string {
+  return text
+    .replace(/\*\*/g, "")
+    .replace(/\*/g, "")
+    .replace(/__/g, "")
+    .replace(/_/g, " ")
+    .replace(/^#+\s*/gm, "")
+    .replace(/^[-*]\s+/gm, "")
+    .trim();
+}
+
 async function performLiveSearch(
   query: string,
   searchType: "x" | "web" | "both" = "x",
   xHandle?: string
 ): Promise<LiveSearchResult> {
   return new Promise((resolve) => {
+    let resolved = false;
+    const safeResolve = (result: LiveSearchResult) => {
+      if (resolved) return;
+      resolved = true;
+      clearTimeout(timeoutId);
+      resolve(result);
+    };
+
     const scriptPath = path.join(__dirname, "../scripts/xai_search.py");
     const args = [scriptPath, query, searchType];
     if (xHandle) args.push(xHandle);
 
-    console.log(`[LIVE SEARCH] Executing: python3 ${args.join(" ")}`);
+    console.log(`[LIVE SEARCH] Executing search for: ${query.substring(0, 50)}...`);
 
     const pythonProcess = spawn("python3", args, {
       env: { ...process.env },
@@ -74,7 +115,7 @@ async function performLiveSearch(
     pythonProcess.on("close", (code) => {
       if (code !== 0) {
         console.error(`[LIVE SEARCH] Python script error: ${stderr}`);
-        resolve({
+        safeResolve({
           content: "Live search is temporarily unavailable. Check @MondayTrade_ on X for updates.",
           citations: [{ title: "@MondayTrade_ on X", url: "https://x.com/MondayTrade_", type: "x" }],
           error: stderr,
@@ -84,11 +125,15 @@ async function performLiveSearch(
 
       try {
         const result = JSON.parse(stdout);
-        console.log(`[LIVE SEARCH] Success: ${result.content?.substring(0, 100)}...`);
-        resolve(result);
+        let content = result.content || "";
+        content = stripMarkdown(content);
+        content = truncateToTwoSentences(content);
+        result.content = content;
+        console.log(`[LIVE SEARCH] Success: ${content.substring(0, 100)}...`);
+        safeResolve(result);
       } catch (e) {
         console.error(`[LIVE SEARCH] JSON parse error: ${e}`);
-        resolve({
+        safeResolve({
           content: "Live search is temporarily unavailable. Check @MondayTrade_ on X for updates.",
           citations: [{ title: "@MondayTrade_ on X", url: "https://x.com/MondayTrade_", type: "x" }],
           error: "Failed to parse search results",
@@ -98,20 +143,22 @@ async function performLiveSearch(
 
     pythonProcess.on("error", (err) => {
       console.error(`[LIVE SEARCH] Process error: ${err}`);
-      resolve({
+      safeResolve({
         content: "Live search is temporarily unavailable. Check @MondayTrade_ on X for updates.",
         citations: [{ title: "@MondayTrade_ on X", url: "https://x.com/MondayTrade_", type: "x" }],
         error: err.message,
       });
     });
 
-    setTimeout(() => {
-      pythonProcess.kill();
-      resolve({
-        content: "Search timed out. Check @MondayTrade_ on X for the latest updates.",
-        citations: [{ title: "@MondayTrade_ on X", url: "https://x.com/MondayTrade_", type: "x" }],
-        error: "timeout",
-      });
+    const timeoutId = setTimeout(() => {
+      if (!resolved) {
+        pythonProcess.kill();
+        safeResolve({
+          content: "Search timed out. Check @MondayTrade_ on X for the latest updates.",
+          citations: [{ title: "@MondayTrade_ on X", url: "https://x.com/MondayTrade_", type: "x" }],
+          error: "timeout",
+        });
+      }
     }, 30000);
   });
 }

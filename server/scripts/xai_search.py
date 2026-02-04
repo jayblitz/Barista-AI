@@ -65,32 +65,60 @@ def perform_search(query: str, search_type: str = "x", x_handle: Optional[str] =
             tools=tools,
         )
         
-        system_prompt = """You are a helpful assistant that searches for real-time information.
-Keep your response brief and factual - maximum 2-3 sentences.
-Include the most relevant recent information found.
-Do not use emojis."""
+        system_prompt = """You are Barista, assistant for Monday Trade. Search and answer.
+
+CRITICAL RULES:
+1. MAX 2 sentences total. Never more.
+2. No markdown formatting, no bold, no lists.
+3. Plain text only with inline citation numbers like [1], [2].
+4. Answer only what was asked.
+5. No emojis."""
         
         chat.append(user(f"{system_prompt}\n\nSearch and answer: {query}"))
         
         response = chat.sample()
         
+        import re
+        content_citations = re.findall(r'\[\[(\d+)\]\]\((https?://[^\)]+)\)', response.content or "")
+        
         citations: List[dict] = []
-        if hasattr(response, 'inline_citations') and response.inline_citations:
+        
+        for idx, url in content_citations:
+            is_x_url = "x.com" in url or "twitter.com" in url
+            citations.append({
+                "id": idx,
+                "title": f"Source {idx}" if not is_x_url else "@MondayTrade_",
+                "url": url,
+                "type": "x" if is_x_url else "web"
+            })
+        
+        if not citations and hasattr(response, 'inline_citations') and response.inline_citations:
             for citation in response.inline_citations:
-                if hasattr(citation, 'web_citation') and citation.web_citation:
-                    citations.append({
-                        "id": str(citation.id) if hasattr(citation, 'id') else "",
-                        "title": getattr(citation.web_citation, 'title', 'Web Result'),
-                        "url": str(citation.web_citation.url),
-                        "type": "web"
-                    })
-                elif hasattr(citation, 'x_citation') and citation.x_citation:
-                    citations.append({
-                        "id": str(citation.id) if hasattr(citation, 'id') else "",
-                        "title": f"@{getattr(citation.x_citation, 'username', 'X User')}",
-                        "url": str(getattr(citation.x_citation, 'url', 'https://x.com')),
-                        "type": "x"
-                    })
+                try:
+                    if hasattr(citation, 'web_citation') and citation.web_citation:
+                        url = ""
+                        if hasattr(citation.web_citation, 'url'):
+                            url = str(citation.web_citation.url) if citation.web_citation.url else ""
+                        title = getattr(citation.web_citation, 'title', None) or 'Web Result'
+                        citations.append({
+                            "id": str(getattr(citation, 'id', '')),
+                            "title": title,
+                            "url": url,
+                            "type": "web"
+                        })
+                    elif hasattr(citation, 'x_citation') and citation.x_citation:
+                        url = ""
+                        if hasattr(citation.x_citation, 'url'):
+                            url = str(citation.x_citation.url) if citation.x_citation.url else ""
+                        username = getattr(citation.x_citation, 'username', None) or 'X User'
+                        citations.append({
+                            "id": str(getattr(citation, 'id', '')),
+                            "title": f"@{username}",
+                            "url": url,
+                            "type": "x"
+                        })
+                except Exception as citation_err:
+                    pass
         
         tools_used = []
         if search_type in ["x", "both"]:
