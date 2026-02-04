@@ -56,7 +56,7 @@ export interface ChatResponse {
 
 export interface SuggestionPill {
   text: string;
-  emoji: string;
+  emoji?: string;
 }
 
 export interface MarketData {

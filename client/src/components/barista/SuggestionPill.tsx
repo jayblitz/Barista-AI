@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 
 interface SuggestionPillProps {
   text: string;
-  emoji: string;
+  emoji?: string;
   onClick: () => void;
   disabled?: boolean;
 }
@@ -18,14 +18,14 @@ export function SuggestionPill({ text, emoji, onClick, disabled = false }: Sugge
       whileTap={{ scale: 0.98 }}
       data-testid={`suggestion-${text.toLowerCase().replace(/\s+/g, '-').replace(/[?]/g, '')}`}
     >
-      <span className="text-sm">{emoji}</span>
+      {emoji && <span className="text-sm">{emoji}</span>}
       <span>{text}</span>
     </motion.button>
   );
 }
 
 interface SuggestionPillsProps {
-  suggestions: Array<{ text: string; emoji: string }>;
+  suggestions: Array<{ text: string; emoji?: string }>;
   onSelect: (text: string) => void;
   disabled?: boolean;
 }
