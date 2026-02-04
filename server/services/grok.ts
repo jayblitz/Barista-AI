@@ -1,4 +1,6 @@
 import OpenAI from "openai";
+import { spawn } from "child_process";
+import path from "path";
 
 interface ChatMessage {
   role: "user" | "assistant";
@@ -13,6 +15,105 @@ export interface GrokResponse {
     type: "docs" | "x" | "web";
   }>;
   toolsUsed: Record<string, number>;
+}
+
+interface LiveSearchResult {
+  content: string;
+  citations: Array<{ id?: string; title: string; url: string; type: string }>;
+  error?: string;
+  tools_used?: string[];
+}
+
+function isLiveSearchQuery(message: string): boolean {
+  const lowerMessage = message.toLowerCase();
+  const searchKeywords = [
+    "latest",
+    "recent",
+    "news",
+    "tweet",
+    "twitter",
+    "post",
+    "announcement",
+    "update",
+    "what's new",
+    "whats new",
+    "coming soon",
+    "roadmap",
+    "today",
+  ];
+  return searchKeywords.some((keyword) => lowerMessage.includes(keyword));
+}
+
+async function performLiveSearch(
+  query: string,
+  searchType: "x" | "web" | "both" = "x",
+  xHandle?: string
+): Promise<LiveSearchResult> {
+  return new Promise((resolve) => {
+    const scriptPath = path.join(__dirname, "../scripts/xai_search.py");
+    const args = [scriptPath, query, searchType];
+    if (xHandle) args.push(xHandle);
+
+    console.log(`[LIVE SEARCH] Executing: python3 ${args.join(" ")}`);
+
+    const pythonProcess = spawn("python3", args, {
+      env: { ...process.env },
+    });
+
+    let stdout = "";
+    let stderr = "";
+
+    pythonProcess.stdout.on("data", (data) => {
+      stdout += data.toString();
+    });
+
+    pythonProcess.stderr.on("data", (data) => {
+      stderr += data.toString();
+    });
+
+    pythonProcess.on("close", (code) => {
+      if (code !== 0) {
+        console.error(`[LIVE SEARCH] Python script error: ${stderr}`);
+        resolve({
+          content: "Live search is temporarily unavailable. Check @MondayTrade_ on X for updates.",
+          citations: [{ title: "@MondayTrade_ on X", url: "https://x.com/MondayTrade_", type: "x" }],
+          error: stderr,
+        });
+        return;
+      }
+
+      try {
+        const result = JSON.parse(stdout);
+        console.log(`[LIVE SEARCH] Success: ${result.content?.substring(0, 100)}...`);
+        resolve(result);
+      } catch (e) {
+        console.error(`[LIVE SEARCH] JSON parse error: ${e}`);
+        resolve({
+          content: "Live search is temporarily unavailable. Check @MondayTrade_ on X for updates.",
+          citations: [{ title: "@MondayTrade_ on X", url: "https://x.com/MondayTrade_", type: "x" }],
+          error: "Failed to parse search results",
+        });
+      }
+    });
+
+    pythonProcess.on("error", (err) => {
+      console.error(`[LIVE SEARCH] Process error: ${err}`);
+      resolve({
+        content: "Live search is temporarily unavailable. Check @MondayTrade_ on X for updates.",
+        citations: [{ title: "@MondayTrade_ on X", url: "https://x.com/MondayTrade_", type: "x" }],
+        error: err.message,
+      });
+    });
+
+    setTimeout(() => {
+      pythonProcess.kill();
+      resolve({
+        content: "Search timed out. Check @MondayTrade_ on X for the latest updates.",
+        citations: [{ title: "@MondayTrade_ on X", url: "https://x.com/MondayTrade_", type: "x" }],
+        error: "timeout",
+      });
+    }, 30000);
+  });
 }
 
 const BARISTA_SYSTEM_PROMPT = `You are Barista, the AI assistant for Monday Trade.
@@ -72,6 +173,28 @@ Or try again in a moment!`,
     };
   }
 
+  if (isLiveSearchQuery(message)) {
+    console.log(`[QUERY] Live search detected: "${message.substring(0, 60)}..."`);
+    
+    const searchResult = await performLiveSearch(
+      `Monday Trade @MondayTrade_ ${message}`,
+      "x",
+      "MondayTrade_"
+    );
+    
+    const citations: GrokResponse["citations"] = searchResult.citations.map((c) => ({
+      title: c.title,
+      url: c.url,
+      type: c.type as "docs" | "x" | "web",
+    }));
+    
+    return {
+      content: searchResult.content,
+      citations,
+      toolsUsed: { live_search: 1 },
+    };
+  }
+
   try {
     let systemPrompt = BARISTA_SYSTEM_PROMPT;
     
@@ -107,23 +230,6 @@ Or try again in a moment!`,
     const content = assistantMessage?.content;
     const toolsUsed: Record<string, number> = {};
     const allCitations: GrokResponse["citations"] = [];
-
-    // For Twitter/announcement queries, add helpful link to @MondayTrade_
-    const isTwitterQuery = message.toLowerCase().includes("tweet") || 
-                           message.toLowerCase().includes("twitter") || 
-                           message.toLowerCase().includes(" x ") ||
-                           message.toLowerCase().includes("post") ||
-                           message.toLowerCase().includes("announcement") ||
-                           message.toLowerCase().includes("latest") ||
-                           message.toLowerCase().includes("news");
-    
-    if (isTwitterQuery) {
-      allCitations.push({ 
-        title: "@MondayTrade_ on X", 
-        url: "https://x.com/MondayTrade_", 
-        type: "x" 
-      });
-    }
 
     if (!content) {
       return {
@@ -181,6 +287,30 @@ export async function streamChatWithGrok(
       content: "I'm having trouble connecting. Please try again or visit docs.monday.trade",
       citations: [],
       toolsUsed: { error: 1 },
+    };
+  }
+
+  if (isLiveSearchQuery(message)) {
+    console.log(`[STREAM] Live search detected: "${message.substring(0, 60)}..."`);
+    
+    const searchResult = await performLiveSearch(
+      `Monday Trade @MondayTrade_ ${message}`,
+      "x",
+      "MondayTrade_"
+    );
+    
+    onChunk(searchResult.content);
+    
+    const resultCitations: GrokResponse["citations"] = searchResult.citations.map((c) => ({
+      title: c.title,
+      url: c.url,
+      type: c.type as "docs" | "x" | "web",
+    }));
+    
+    return {
+      content: searchResult.content,
+      citations: resultCitations,
+      toolsUsed: { live_search: 1 },
     };
   }
 
@@ -244,7 +374,7 @@ export function isConfigured(): boolean {
 export function getStatus(): { configured: boolean; model: string; tools: string[] } {
   return {
     configured: isConfigured(),
-    model: "grok-3",
-    tools: ["rag"],
+    model: "grok-3 + grok-4-1-fast (live search)",
+    tools: ["rag", "live_search", "x_search", "web_search"],
   };
 }
