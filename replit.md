@@ -47,11 +47,10 @@ Barista is an AI-powered chat assistant for Monday Trade, a decentralized perpet
 ## Key Features
 1. **Barista Personality** - Friendly, coffee-themed AI assistant
 2. **RAG Context** - Manual knowledge entries for accurate answers
-3. **Tool Indicators** - Shows when AI is searching docs/web
-4. **Source Citations** - Links to documentation used
-5. **Feedback System** - Thumbs up/down on responses
-6. **Caching** - Redis caching for common queries
-7. **Dark/Light Theme** - Toggle between modes
+3. **Source Citations** - Links to documentation and @MondayTrade_ for live updates
+4. **Feedback System** - Thumbs up/down on responses
+5. **Caching** - Redis caching for common queries (optional)
+6. **Dark/Light Theme** - System theme preference (auto dark/light mode)
 
 ## Environment Variables Required
 - `XAI_API_KEY` - Grok API key (powers both chat and live search)

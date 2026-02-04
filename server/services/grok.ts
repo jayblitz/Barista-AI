@@ -142,55 +142,16 @@ Or try again in a moment!`,
     const toolsUsed: Record<string, number> = {};
     const allCitations: GrokResponse["citations"] = [];
 
-    const responseCitations = (response as any).citations || 
-                              (assistantMessage as any)?.citations || 
-                              [];
-    
-    for (const citation of responseCitations) {
-      if (citation.url?.includes("x.com") || citation.url?.includes("twitter.com")) {
-        // Extract tweet-specific title from URL if possible
-        let tweetTitle = citation.title || "@MondayTrade_ on X";
-        const statusMatch = citation.url?.match(/\/status\/(\d+)/);
-        if (statusMatch) {
-          // Extract date from content if available for better title
-          const dateMatch = content?.match(/(\w+ \d{1,2}, \d{4})|(\d{4}-\d{2}-\d{2})/);
-          if (dateMatch) {
-            tweetTitle = `@MondayTrade_ tweet (${dateMatch[0]})`;
-          } else {
-            tweetTitle = `@MondayTrade_ tweet`;
-          }
-        }
-        allCitations.push({ title: tweetTitle, url: citation.url, type: "x" });
-        toolsUsed.live_search = (toolsUsed.live_search || 0) + 1;
-      } else if (citation.url?.includes("monday.trade")) {
-        allCitations.push({ title: citation.title || "Monday Trade Docs", url: citation.url, type: "docs" });
-        toolsUsed.live_search = (toolsUsed.live_search || 0) + 1;
-      } else if (citation.url) {
-        allCitations.push({ title: citation.title || "Web Source", url: citation.url, type: "web" });
-        toolsUsed.live_search = (toolsUsed.live_search || 0) + 1;
-      }
-    }
-
+    // For Twitter/announcement queries, add helpful link to @MondayTrade_
     const isTwitterQuery = message.toLowerCase().includes("tweet") || 
                            message.toLowerCase().includes("twitter") || 
                            message.toLowerCase().includes(" x ") ||
                            message.toLowerCase().includes("post") ||
-                           message.toLowerCase().includes("announcement");
+                           message.toLowerCase().includes("announcement") ||
+                           message.toLowerCase().includes("latest") ||
+                           message.toLowerCase().includes("news");
     
-    // If a tweet URL appears in the content but not in citations, extract it
-    if (content && isTwitterQuery) {
-      const tweetUrlMatch = content.match(/https:\/\/x\.com\/\w+\/status\/\d+/);
-      if (tweetUrlMatch && !allCitations.some(c => c.url === tweetUrlMatch[0])) {
-        const dateMatch = content.match(/(\w+ \d{1,2}, \d{4})|(\d{4}-\d{2}-\d{2})/);
-        allCitations.push({
-          title: dateMatch ? `@MondayTrade_ tweet (${dateMatch[0]})` : "@MondayTrade_ tweet",
-          url: tweetUrlMatch[0],
-          type: "x"
-        });
-      }
-    }
-    
-    if (isTwitterQuery && allCitations.length === 0) {
+    if (isTwitterQuery) {
       allCitations.push({ 
         title: "@MondayTrade_ on X", 
         url: "https://x.com/MondayTrade_", 
