@@ -4,8 +4,9 @@
 Barista is an AI-powered chat assistant for Monday Trade, a decentralized perpetual futures trading platform on Monad blockchain. The assistant uses Grok AI (xAI) for natural language processing with RAG (Retrieval-Augmented Generation) for accurate answers about Monday Trade's features. Users can escalate to live human support when needed.
 
 ## Current State
-**Version 1.4 - Live Support Escalation**
+**Version 1.5 - Live X Search with xAI Agent Tools**
 - Full-stack chat widget with Grok AI integration
+- **Live X/Twitter search** using official xAI SDK with grok-4-1-fast model
 - **Two-way live support escalation system** with agent dashboard
 - Purple Monday Trade branding theme matching app.monday.trade
 - System theme preference (auto dark/light mode based on OS)
@@ -16,6 +17,7 @@ Barista is an AI-powered chat assistant for Monday Trade, a decentralized perpet
 - Redis caching for common queries
 - Email notifications via Resend for new support threads
 - Documentation ingestion script for Pinecone updates
+- Inline citations from real-time X posts
 
 ## Architecture
 
@@ -39,11 +41,13 @@ Barista is an AI-powered chat assistant for Monday Trade, a decentralized perpet
 
 ### Backend (Express + TypeScript)
 - **Services**: Located in `server/services/`
-  - `grok.ts` - Grok AI integration via OpenAI SDK
+  - `grok.ts` - Grok AI integration (grok-3 for chat, grok-4-1-fast for live search via Python subprocess)
   - `vectorStore.ts` - Pinecone RAG with manual knowledge
   - `cache.ts` - Redis/Upstash caching
   - `support.ts` - Support thread management (create, read, message, resolve)
   - `email.ts` - Email notifications via Resend
+- **Scripts**: Located in `server/scripts/`
+  - `xai_search.py` - Live X/Twitter and web search using official xai-sdk with Agent Tools API
 
 ### API Endpoints
 
@@ -84,8 +88,9 @@ Barista is an AI-powered chat assistant for Monday Trade, a decentralized perpet
 Note: OpenAI API key is no longer required - the app uses Grok for all AI features and manual knowledge for RAG.
 
 ## Recent Changes
+- **Feb 4, 2026**: Re-enabled live X search using official xai-sdk Python package with grok-4-1-fast model and Agent Tools API (x_search, web_search). Auto-triggers on queries containing "latest", "news", "tweets", "updates", etc.
 - **Feb 4, 2026**: Added live support escalation system with agent dashboard, email notifications, and two-way messaging
-- **Feb 4, 2026**: Updated to grok-3 model (grok-2-1212 deprecated). Live search temporarily disabled pending xAI Agent Tools API migration
+- **Feb 4, 2026**: Updated to grok-3 model for standard chat (grok-2-1212 deprecated)
 - **Jan 15, 2026**: Fixed live search - switched from invalid tool types to xAI's `search_parameters` API for real-time X/Twitter and web search
 - **Jan 15, 2026**: Expanded knowledge base with 14+ entries covering all docs.monday.trade content (fees, leverage, margin, liquidation, voyage points, wallets, trading pairs, etc.)
 - **Jan 15, 2026**: Created documentation ingestion script (server/scripts/ingestDocs.ts) for Pinecone updates
@@ -97,7 +102,7 @@ Note: OpenAI API key is no longer required - the app uses Grok for all AI featur
 
 ## Tech Stack
 - **Frontend**: React 18, Tailwind CSS, Framer Motion, Shadcn UI
-- **Backend**: Express.js, TypeScript
+- **Backend**: Express.js, TypeScript, Python 3.11 (for xAI Agent Tools)
 - **AI**: Grok API (grok-3 model with RAG knowledge base)
 - **Vector DB**: Pinecone
 - **Cache**: Upstash Redis (optional)
