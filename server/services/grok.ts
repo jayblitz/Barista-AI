@@ -184,11 +184,12 @@ async function performLiveSearch(
 
     pythonProcess.on("close", (code) => {
       if (code !== 0) {
-        console.error(`[LIVE SEARCH] Python script error: ${stderr}`);
+        const sanitizedError = stderr.substring(0, 200).replace(/[^\w\s.:/-]/g, '');
+        console.error(`[LIVE SEARCH] Script error (code ${code}): ${sanitizedError}`);
         safeResolve({
           content: "Live search is temporarily unavailable. Check @MondayTrade_ on X for updates.",
           citations: [{ title: "@MondayTrade_ on X", url: "https://x.com/MondayTrade_", type: "x" }],
-          error: stderr,
+          error: "Search service error",
         });
         return;
       }
@@ -212,11 +213,11 @@ async function performLiveSearch(
     });
 
     pythonProcess.on("error", (err) => {
-      console.error(`[LIVE SEARCH] Process error: ${err}`);
+      console.error(`[LIVE SEARCH] Process error: ${err.message?.substring(0, 100) || 'Unknown error'}`);
       safeResolve({
         content: "Live search is temporarily unavailable. Check @MondayTrade_ on X for updates.",
         citations: [{ title: "@MondayTrade_ on X", url: "https://x.com/MondayTrade_", type: "x" }],
-        error: err.message,
+        error: "Process error",
       });
     });
 
@@ -277,14 +278,7 @@ export async function chatWithGrok(
 
   if (!client) {
     return {
-      content: `I'm having trouble connecting right now.
-
-Please check these resources directly:
-- **Docs**: docs.monday.trade
-- **App**: app.monday.trade
-- **Twitter**: @MondayTrade_
-
-Or try again in a moment!`,
+      content: "I'm having trouble connecting right now. Please try again or visit docs.monday.trade for help.",
       citations: [],
       toolsUsed: { error: 1 },
     };
@@ -353,13 +347,7 @@ Or try again in a moment!`,
 
     if (!content) {
       return {
-        content: `I couldn't find that information.
-
-Try checking:
-- **Docs**: docs.monday.trade
-- **Twitter**: @MondayTrade_
-
-What else can I help with?`,
+        content: "I couldn't find that information. Try checking docs.monday.trade or @MondayTrade_ on X for updates.",
         citations: [],
         toolsUsed: { empty_response: 1 },
       };
@@ -379,12 +367,7 @@ What else can I help with?`,
     console.error("[ERROR] Grok API error:", error);
     
     return {
-      content: `Oops! Something went wrong.
-
-Please try again, or check:
-- **Docs**: docs.monday.trade
-- **App**: app.monday.trade
-- **Twitter**: @MondayTrade_`,
+      content: "Something went wrong. Please try again or visit docs.monday.trade for help.",
       citations: [],
       toolsUsed: { error: 1 },
     };
@@ -471,7 +454,7 @@ export async function streamChatWithGrok(
     }
 
     return {
-      content: fullContent || "I apologize, I couldn't generate a response. Please try again!",
+      content: fullContent || "I couldn't generate a response. Please try again.",
       citations,
       toolsUsed,
     };
