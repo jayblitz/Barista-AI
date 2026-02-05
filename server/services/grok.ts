@@ -87,18 +87,37 @@ function isLiveSearchQuery(message: string): boolean {
 }
 
 function truncateToTwoSentences(text: string): string {
-  const citationPattern = /\[\[\d+\]\]\([^)]+\)/g;
   const placeholders: string[] = [];
+  let placeholderIndex = 0;
+  
+  // Protect citations from being split
+  const citationPattern = /\[\[\d+\]\]\([^)]+\)/g;
   let tempText = text.replace(citationPattern, (match) => {
     placeholders.push(match);
-    return `__CITE_${placeholders.length - 1}__`;
+    return `__PLACEHOLDER_${placeholderIndex++}__`;
   });
   
+  // Protect URLs from being split on periods
+  const urlPattern = /https?:\/\/[^\s]+/g;
+  tempText = tempText.replace(urlPattern, (match) => {
+    placeholders.push(match);
+    return `__PLACEHOLDER_${placeholderIndex++}__`;
+  });
+  
+  // Protect Twitter handles and mentions
+  const handlePattern = /@[\w_]+/g;
+  tempText = tempText.replace(handlePattern, (match) => {
+    placeholders.push(match);
+    return `__PLACEHOLDER_${placeholderIndex++}__`;
+  });
+  
+  // Now split on sentence boundaries
   const sentences = tempText.match(/[^.!?]*[.!?]+/g) || [tempText];
   let result = sentences.slice(0, 2).join(" ").trim();
   
-  placeholders.forEach((citation, index) => {
-    result = result.replace(`__CITE_${index}__`, citation);
+  // Restore all placeholders
+  placeholders.forEach((original, index) => {
+    result = result.replace(`__PLACEHOLDER_${index}__`, original);
   });
   
   return result;
@@ -108,11 +127,24 @@ function stripMarkdown(text: string): string {
   return text
     .replace(/\*\*/g, "")
     .replace(/\*/g, "")
-    .replace(/__/g, "")
-    .replace(/_/g, " ")
+    // Only remove double underscores used for bold/italic, not single underscores in handles/URLs
+    .replace(/(?<![a-zA-Z0-9])__(?![a-zA-Z0-9])/g, "")
     .replace(/^#+\s*/gm, "")
     .replace(/^[-*]\s+/gm, "")
     .trim();
+}
+
+function deduplicateCitations(
+  citations: Array<{ title: string; url: string; type: string }>
+): Array<{ title: string; url: string; type: string }> {
+  const seen = new Set<string>();
+  return citations.filter((citation) => {
+    if (seen.has(citation.url)) {
+      return false;
+    }
+    seen.add(citation.url);
+    return true;
+  });
 }
 
 async function performLiveSearch(
@@ -267,11 +299,14 @@ Or try again in a moment!`,
       "MondayTrade_"
     );
     
-    const citations: GrokResponse["citations"] = searchResult.citations.map((c) => ({
+    const rawCitations = searchResult.citations.map((c) => ({
       title: c.title,
       url: c.url,
       type: c.type as "docs" | "x" | "web",
     }));
+    
+    // Deduplicate citations to avoid same URL appearing multiple times
+    const citations = deduplicateCitations(rawCitations) as GrokResponse["citations"];
     
     return {
       content: searchResult.content,
