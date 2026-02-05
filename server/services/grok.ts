@@ -31,6 +31,12 @@ interface LiveSearchResult {
 function isLiveSearchQuery(message: string): boolean {
   const lowerMessage = message.toLowerCase();
   
+  // Helper to check for whole word matches (with word boundaries)
+  const containsWord = (text: string, word: string): boolean => {
+    const regex = new RegExp(`\\b${word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
+    return regex.test(text);
+  };
+  
   // Time-related keywords that suggest user wants current/fresh information
   const timeKeywords = [
     "latest",
@@ -38,7 +44,6 @@ function isLiveSearchQuery(message: string): boolean {
     "news",
     "tweet",
     "twitter",
-    "post",
     "announcement",
     "update",
     "what's new",
@@ -51,36 +56,32 @@ function isLiveSearchQuery(message: string): boolean {
     "live",
     "ongoing",
     "active",
-    "running",
     "happening",
     "this week",
     "this month",
   ];
   
   // Topic-based triggers - these subjects are time-sensitive and change frequently
-  // so we should always search X for accurate answers
+  // Only trigger if they appear as whole words to avoid false positives
   const timeSensitiveTopics = [
     "campaign",
+    "campaigns",
     "promotion",
     "airdrop",
-    "event",
+    "airdrops",
     "contest",
     "partnership",
-    "listing",
-    "launch",
     "tvl",
     "incentive",
+    "incentives",
     "reward program",
     "points program",
     "voyage points",
-    "testnet",
-    "mainnet",
-    "migration",
   ];
   
-  // Trigger search if message contains time keywords OR time-sensitive topics
-  const hasTimeKeyword = timeKeywords.some((keyword) => lowerMessage.includes(keyword));
-  const hasTimeSensitiveTopic = timeSensitiveTopics.some((topic) => lowerMessage.includes(topic));
+  // Use word boundary matching to avoid false positives like "deliver" matching "live"
+  const hasTimeKeyword = timeKeywords.some((keyword) => containsWord(lowerMessage, keyword));
+  const hasTimeSensitiveTopic = timeSensitiveTopics.some((topic) => containsWord(lowerMessage, topic));
   
   return hasTimeKeyword || hasTimeSensitiveTopic;
 }
