@@ -88,6 +88,7 @@ Barista is an AI-powered chat assistant for Monday Trade, a decentralized perpet
 Note: OpenAI API key is no longer required - the app uses Grok for all AI features and manual knowledge for RAG.
 
 ## Recent Changes
+- **Feb 5, 2026**: Updated footer links - Docs to Blog, Trade Now to Discord, tagline to "Your All in One DEX"
 - **Feb 5, 2026**: Fixed live search trigger detection - expanded keywords to include time-sensitive topics (campaign, tvl, airdrop, promotion, etc.) with word-boundary matching to avoid false positives
 - **Feb 4, 2026**: Re-enabled live X search using official xai-sdk Python package with grok-4-1-fast model and Agent Tools API (x_search, web_search). Auto-triggers on queries containing "latest", "news", "tweets", "updates", etc.
 - **Feb 4, 2026**: Added live support escalation system with agent dashboard, email notifications, and two-way messaging

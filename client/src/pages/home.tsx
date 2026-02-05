@@ -143,16 +143,16 @@ export default function Home() {
 
       <footer className="border-t border-border py-8 mt-16" data-testid="footer">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
-          <p data-testid="footer-tagline">Monday Trade - Perpetuals Trading on Monad</p>
+          <p data-testid="footer-tagline">Monday Trade - Your All in One DEX</p>
           <div className="flex items-center gap-6" data-testid="footer-links">
             <a
-              href="https://docs.monday.trade"
+              href="https://monday.trade/blog"
               target="_blank"
               rel="noopener noreferrer"
               className="hover:text-foreground transition-colors"
-              data-testid="link-docs"
+              data-testid="link-blog"
             >
-              Docs
+              Blog
             </a>
             <a
               href="https://x.com/MondayTrade_"
@@ -164,13 +164,13 @@ export default function Home() {
               X / Twitter
             </a>
             <a
-              href="https://app.monday.trade"
+              href="https://discord.gg/mondaytrade"
               target="_blank"
               rel="noopener noreferrer"
               className="hover:text-foreground transition-colors"
-              data-testid="link-trade"
+              data-testid="link-discord"
             >
-              Trade Now
+              Discord
             </a>
           </div>
         </div>
