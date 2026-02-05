@@ -30,7 +30,9 @@ interface LiveSearchResult {
 
 function isLiveSearchQuery(message: string): boolean {
   const lowerMessage = message.toLowerCase();
-  const searchKeywords = [
+  
+  // Time-related keywords that suggest user wants current/fresh information
+  const timeKeywords = [
     "latest",
     "recent",
     "news",
@@ -44,8 +46,43 @@ function isLiveSearchQuery(message: string): boolean {
     "coming soon",
     "roadmap",
     "today",
+    "current",
+    "now",
+    "live",
+    "ongoing",
+    "active",
+    "running",
+    "happening",
+    "this week",
+    "this month",
   ];
-  return searchKeywords.some((keyword) => lowerMessage.includes(keyword));
+  
+  // Topic-based triggers - these subjects are time-sensitive and change frequently
+  // so we should always search X for accurate answers
+  const timeSensitiveTopics = [
+    "campaign",
+    "promotion",
+    "airdrop",
+    "event",
+    "contest",
+    "partnership",
+    "listing",
+    "launch",
+    "tvl",
+    "incentive",
+    "reward program",
+    "points program",
+    "voyage points",
+    "testnet",
+    "mainnet",
+    "migration",
+  ];
+  
+  // Trigger search if message contains time keywords OR time-sensitive topics
+  const hasTimeKeyword = timeKeywords.some((keyword) => lowerMessage.includes(keyword));
+  const hasTimeSensitiveTopic = timeSensitiveTopics.some((topic) => lowerMessage.includes(topic));
+  
+  return hasTimeKeyword || hasTimeSensitiveTopic;
 }
 
 function truncateToTwoSentences(text: string): string {
