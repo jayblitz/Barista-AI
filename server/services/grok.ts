@@ -1,10 +1,10 @@
 import OpenAI from "openai";
 import { spawn } from "child_process";
 import path from "path";
-import { fileURLToPath } from "url";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+function getScriptPath(): string {
+  return path.join(process.cwd(), "server", "scripts", "xai_search.py");
+}
 
 interface ChatMessage {
   role: "user" | "assistant";
@@ -161,7 +161,7 @@ async function performLiveSearch(
       resolve(result);
     };
 
-    const scriptPath = path.join(__dirname, "../scripts/xai_search.py");
+    const scriptPath = getScriptPath();
     const args = [scriptPath, query, searchType];
     if (xHandle) args.push(xHandle);
 
