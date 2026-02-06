@@ -342,6 +342,19 @@ Slippage: Difference between expected and executed price.
 Taker: Executes against existing liquidity (pays 0.02% on perps).
 Maker: Provides liquidity via limit orders (earns 0% rebate).`
   },
+  {
+    id: "official-links-socials",
+    keywords: ["link", "links", "social", "socials", "website", "site", "discord", "twitter", "x", "blog", "docs", "documentation", "community", "contact", "follow", "join", "url", "official", "connect with", "find", "reach"],
+    content: `Monday Trade Official Links and Socials:
+
+Website: https://monday.trade/
+Documentation: https://docs.monday.trade/
+Blog: https://monday.trade/blog
+X (Twitter): https://x.com/MondayTrade_
+Discord: https://discord.com/invite/mondaytrade
+
+Follow @MondayTrade_ on X for the latest announcements, updates, and community discussions. Join the Discord server for real-time support and to connect with other traders.`
+  },
 ];
 
 function getPineconeClient(): Pinecone | null {
