@@ -13,6 +13,29 @@ export function Message({ message, onFeedback }: MessageProps) {
   const content = message.content || "";
   const timestamp = message.timestamp instanceof Date ? message.timestamp : new Date(message.timestamp);
 
+  const renderWithLinks = (text: string, keyPrefix: string) => {
+    const urlPattern = /(https?:\/\/[^\s,)>\]]+[^\s,)>\].;:!?])/g;
+    const urlTest = /^https?:\/\//;
+    const parts = text.split(urlPattern);
+    return parts.map((segment, i) => {
+      if (urlTest.test(segment)) {
+        return (
+          <a
+            key={`${keyPrefix}-link-${i}`}
+            href={segment}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-primary underline underline-offset-2 hover:text-primary/80 transition-colors"
+            data-testid={`link-inline-${keyPrefix}-${i}`}
+          >
+            {segment}
+          </a>
+        );
+      }
+      return segment;
+    });
+  };
+
   const formatContent = (text: string) => {
     if (!text) return "";
     const parts = text.split(/(\*\*[^*]+\*\*)/g);
@@ -20,11 +43,11 @@ export function Message({ message, onFeedback }: MessageProps) {
       if (part.startsWith("**") && part.endsWith("**")) {
         return (
           <strong key={index} className="font-semibold">
-            {part.slice(2, -2)}
+            {renderWithLinks(part.slice(2, -2), `bold-${index}`)}
           </strong>
         );
       }
-      return part;
+      return renderWithLinks(part, `text-${index}`);
     });
   };
 
