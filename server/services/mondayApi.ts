@@ -123,6 +123,41 @@ export async function fetchFundingRateHistory(symbol: string = "MON/USDC"): Prom
   }
 }
 
+export async function fetchInstrumentsInfo(symbol?: string): Promise<Record<string, unknown>[] | null> {
+  const config = getConfig();
+  if (!config) {
+    console.log("[MONDAY API] API credentials not configured");
+    return null;
+  }
+
+  let path = "/v4/public/trader/market/instruments";
+  if (symbol) {
+    path += `?symbol=${encodeURIComponent(symbol)}`;
+  }
+  const headers = getHeaders(config, "GET", path);
+
+  try {
+    const response = await fetch(`${BASE_URL}${path}`, { headers, signal: AbortSignal.timeout(10000) });
+
+    if (!response.ok) {
+      console.error(`[MONDAY API] Instruments info request failed: ${response.status}`);
+      return null;
+    }
+
+    const json = await response.json() as ApiResponse<Record<string, unknown>[]>;
+
+    if (json.code !== 0 && json.code !== 200) {
+      console.error(`[MONDAY API] API error: code=${json.code} msg=${json.msg}`);
+      return null;
+    }
+
+    return json.data || [];
+  } catch (error) {
+    console.error("[MONDAY API] Fetch instruments error:", error);
+    return null;
+  }
+}
+
 export function isConfigured(): boolean {
   return !!process.env.MONDAY_API_KEY && !!process.env.MONDAY_API_SECRET;
 }

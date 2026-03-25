@@ -132,10 +132,16 @@ export function getFundingContextForChat(): string | null {
   const ratePercent = (currentStatus.currentRate * 100).toFixed(4);
   const apr = currentStatus.annualizedRate?.toFixed(2) || "N/A";
 
+  const directionLabel = currentStatus.direction === "positive"
+    ? "longs pay shorts"
+    : currentStatus.direction === "negative"
+      ? "shorts pay longs"
+      : "no payments either way";
+
   return `LIVE FUNDING RATE DATA (MON/USDC Perpetual):
 - Current Funding Rate: ${ratePercent}%
 - Annualized Rate: ${apr}%
-- Direction: ${currentStatus.direction} (${currentStatus.favorable ? "longs pay shorts" : "shorts pay longs"})
+- Direction: ${currentStatus.direction} (${directionLabel})
 - Favorable for Delta Neutral: ${currentStatus.favorable ? "YES" : "NO"}
 - Funding Interval: ${currentStatus.fundingInterval} hours
 - Last Updated: ${currentStatus.lastUpdated}
