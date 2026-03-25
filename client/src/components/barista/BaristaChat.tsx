@@ -20,7 +20,7 @@ const DISCORD_URL = "https://discord.com/invite/mondaytrade";
 const HUMAN_SUPPORT_KEYWORDS = [
   "human", "real person", "agent", "talk to someone", "speak to someone",
   "live chat", "customer service", "representative", "live support",
-  "contact support", "need help", "speak with",
+  "contact support", "need help", "speak with", "support", "help me",
 ];
 
 function wantsHumanSupport(message: string): boolean {
