@@ -83,7 +83,7 @@ export function BaristaChat() {
       const errorMessage: UIMessage = {
         id: crypto.randomUUID(),
         role: "assistant",
-        content: "Oops! Something went wrong while brewing your answer. Please try again!",
+        content: "Something went wrong. Please try again or visit docs.monday.trade for help.",
         feedback: null,
         timestamp: new Date(),
       };

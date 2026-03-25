@@ -76,7 +76,8 @@ export async function registerRoutes(
 
       const grokResponse = await chatWithGrok(message, history, ragContext || undefined);
 
-      if (history.length === 0) {
+      // Do not cache live search results — they are time-sensitive
+      if (history.length === 0 && !grokResponse.toolsUsed.live_search) {
         await setCachedResponse(message, grokResponse.content);
       }
 
@@ -133,7 +134,7 @@ export async function registerRoutes(
 
       let fullResponse = "";
 
-      await streamChatWithGrok(
+      const streamResult = await streamChatWithGrok(
         message,
         history,
         ragContext || undefined,
@@ -145,11 +146,12 @@ export async function registerRoutes(
 
       res.write(`data: ${JSON.stringify({ 
         type: "done", 
-        toolsUsed: { rag: ragContext ? 1 : 0 },
-        citations: []
+        toolsUsed: { ...streamResult.toolsUsed, rag: ragContext ? 1 : 0 },
+        citations: streamResult.citations || []
       })}\n\n`);
 
-      if (history.length === 0) {
+      // Do not cache live search results — they are time-sensitive
+      if (history.length === 0 && !streamResult.toolsUsed.live_search) {
         await setCachedResponse(message, fullResponse);
       }
 
