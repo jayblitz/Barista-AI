@@ -2,14 +2,14 @@ import { useState, useCallback } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { FloatingChatBubble } from "./FloatingChatBubble";
 import { ChatWindow } from "./ChatWindow";
-import type { UIMessage, ChatResponse, SuggestionPill, MessageHistory } from "@shared/schema";
+import type { UIMessage, ChatResponse, SuggestionPill, MessageHistory, FundingStatusResponse } from "@shared/schema";
 
 const DEFAULT_SUGGESTIONS: SuggestionPill[] = [
   { text: "What is Monday Trade?" },
-  { text: "Do I need an invite code?" },
+  { text: "Delta neutral strategy?" },
+  { text: "Funding rate?" },
   { text: "Trading fees?" },
   { text: "Latest announcements" },
-  { text: "How to set stop loss?" },
   { text: "Voyage Points?" },
   { text: "Max leverage?" },
   { text: "Supported wallets?" },
@@ -37,6 +37,12 @@ export function BaristaChat() {
   const { data: suggestions = DEFAULT_SUGGESTIONS } = useQuery<SuggestionPill[]>({
     queryKey: ["/api/chat/suggestions"],
     staleTime: 1000 * 60 * 60,
+  });
+
+  const { data: fundingStatus } = useQuery<FundingStatusResponse>({
+    queryKey: ["/api/funding/status"],
+    refetchInterval: 5 * 60 * 1000,
+    staleTime: 2 * 60 * 1000,
   });
 
   const chatMutation = useMutation({
@@ -138,7 +144,7 @@ export function BaristaChat() {
 
   return (
     <>
-      <FloatingChatBubble isOpen={isOpen} onClick={toggleChat} />
+      <FloatingChatBubble isOpen={isOpen} onClick={toggleChat} fundingFavorable={fundingStatus?.favorable ?? false} />
       <ChatWindow
         isOpen={isOpen}
         onClose={toggleChat}

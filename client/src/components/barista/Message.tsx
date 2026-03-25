@@ -56,6 +56,7 @@ export function Message({ message, onFeedback }: MessageProps) {
     const tools: string[] = [];
     if (message.toolsUsed.web_search) tools.push("Web Search");
     if (message.toolsUsed.x_search) tools.push("X Search");
+    if (message.toolsUsed.funding_rate) tools.push("Funding Rate");
     if (message.toolsUsed.rag) tools.push("Docs");
     if (tools.length === 0) return null;
     return tools.join(" • ");

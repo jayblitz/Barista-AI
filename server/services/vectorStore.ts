@@ -343,6 +343,45 @@ Taker: Executes against existing liquidity (pays 0.02% on perps).
 Maker: Provides liquidity via limit orders (earns 0% rebate).`
   },
   {
+    id: "delta-neutral-strategy",
+    keywords: ["delta", "neutral", "delta neutral", "delta-neutral", "funding", "earn", "strategy", "cash carry", "basis", "hedge", "hedging", "1x", "short perp"],
+    content: `Delta Neutral Strategy on Monday Trade:
+
+What is Delta Neutral?
+A delta neutral strategy eliminates price exposure while earning funding fees. On Monday Trade, this means:
+1. Buy MON on the spot market
+2. Short MON/USDC perpetual at 1x leverage
+
+Since your spot position (long) and perp position (short) cancel each other out, you have zero net price exposure. Your profit comes from funding fees.
+
+How Funding Fees Work:
+- When the funding rate is positive, longs pay shorts. Your short perp position earns fees.
+- When the funding rate is negative, shorts pay longs. Your short perp position pays fees.
+- The strategy is only profitable when the funding rate is consistently positive.
+
+Projected Yield:
+- Annualized yield = funding rate per period x number of periods per year x 100
+- MON/USDC has a 24-hour funding interval, so there are 365 funding periods per year
+- Example: If the funding rate is 0.01% per period, the annualized yield is approximately 3.65%
+
+Risks:
+- Funding rate reversal: The rate can turn negative, causing losses instead of gains
+- Exchange risk: Smart contract risk inherent in all DeFi protocols
+- Liquidation edge case: Although 1x leverage has very low liquidation risk, extreme price moves combined with funding payments could theoretically erode margin over time
+- Execution risk: Slippage when entering or exiting spot and perp positions simultaneously
+- Opportunity cost: Capital is locked in the strategy and cannot be used elsewhere
+
+When to Enter:
+- When the funding rate is consistently positive over multiple periods
+- When the annualized rate offers attractive yield compared to other opportunities
+
+When to Exit:
+- When the funding rate turns negative or near zero
+- When a better opportunity is available for your capital
+
+Barista monitors the MON/USDC funding rate and alerts you when conditions are favorable.`
+  },
+  {
     id: "official-links-socials",
     keywords: ["link", "links", "social", "socials", "website", "site", "discord", "twitter", "x", "blog", "docs", "documentation", "community", "contact", "follow", "join", "url", "official", "connect with", "find", "reach"],
     content: `Monday Trade Official Links and Socials:

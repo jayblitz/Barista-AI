@@ -4,14 +4,16 @@ import { randomUUID } from "crypto";
 import { chatWithGrok, streamChatWithGrok, isConfigured as isGrokConfigured } from "./services/grok";
 import { queryKnowledge, healthCheck as ragHealthCheck, isConfigured as isRagConfigured } from "./services/vectorStore";
 import { getCachedResponse, setCachedResponse, healthCheck as cacheHealthCheck, isConfigured as isCacheConfigured } from "./services/cache";
+import { startFundingMonitor, getFundingStatus } from "./services/fundingMonitor";
+import { isConfigured as isMondayApiConfigured } from "./services/mondayApi";
 import { chatRequestSchema, feedbackSchema, type SuggestionPill, type ChatResponse } from "@shared/schema";
 
 const SUGGESTIONS: SuggestionPill[] = [
   { text: "What is Monday Trade?" },
-  { text: "Do I need an invite code?" },
+  { text: "Delta neutral strategy?" },
+  { text: "Funding rate?" },
   { text: "Trading fees?" },
   { text: "Latest announcements" },
-  { text: "How to set stop loss?" },
   { text: "Voyage Points?" },
   { text: "Max leverage?" },
   { text: "Supported wallets?" },
@@ -28,6 +30,8 @@ export async function registerRoutes(
       ragHealthCheck(),
     ]);
 
+    const fundingStatus = getFundingStatus();
+
     res.json({
       status: "ok",
       timestamp: new Date().toISOString(),
@@ -35,8 +39,15 @@ export async function registerRoutes(
         grok: isGrokConfigured() ? "configured" : "not_configured",
         rag: isRagConfigured() ? (ragStatus ? "connected" : "error") : "not_configured",
         cache: isCacheConfigured() ? (cacheStatus ? "connected" : "error") : "not_configured",
+        mondayApi: isMondayApiConfigured() ? "configured" : "not_configured",
+        fundingMonitor: fundingStatus.available ? "active" : (fundingStatus.configured ? "configured" : "not_configured"),
       },
     });
+  });
+
+  app.get("/api/funding/status", (_req: Request, res: Response) => {
+    const status = getFundingStatus();
+    res.json(status);
   });
 
   app.get("/api/chat/suggestions", (_req: Request, res: Response) => {
@@ -183,6 +194,8 @@ export async function registerRoutes(
       res.status(500).json({ error: "Failed to save feedback" });
     }
   });
+
+  startFundingMonitor();
 
   return httpServer;
 }

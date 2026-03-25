@@ -34,6 +34,20 @@ export interface ToolsUsed {
   web_search?: number;
   x_search?: number;
   rag?: number;
+  funding_rate?: number;
+}
+
+export interface FundingStatusResponse {
+  configured: boolean;
+  available: boolean;
+  symbol: string;
+  currentRate: number | null;
+  annualizedRate: number | null;
+  favorable: boolean;
+  direction: "positive" | "negative" | "neutral" | null;
+  lastUpdated: string | null;
+  fundingInterval: number;
+  message: string;
 }
 
 export interface ChatRequest {

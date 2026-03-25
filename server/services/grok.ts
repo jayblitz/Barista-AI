@@ -1,6 +1,7 @@
 import OpenAI from "openai";
 import { spawn } from "child_process";
 import path from "path";
+import { getFundingContextForChat } from "./fundingMonitor";
 
 function getScriptPath(): string {
   return path.join(process.cwd(), "server", "scripts", "xai_search.py");
@@ -84,6 +85,27 @@ function isLiveSearchQuery(message: string): boolean {
   const hasTimeSensitiveTopic = timeSensitiveTopics.some((topic) => containsWord(lowerMessage, topic));
   
   return hasTimeKeyword || hasTimeSensitiveTopic;
+}
+
+function isFundingQuery(message: string): boolean {
+  const lower = message.toLowerCase();
+  const fundingKeywords = [
+    "funding rate",
+    "funding fee",
+    "delta neutral",
+    "delta-neutral",
+    "deltaneutral",
+    "earn funding",
+    "funding strategy",
+    "cash and carry",
+    "basis trade",
+    "funding favorable",
+    "funding positive",
+    "funding negative",
+    "shorts earn",
+    "longs pay",
+  ];
+  return fundingKeywords.some(keyword => lower.includes(keyword));
 }
 
 function truncateToTwoSentences(text: string): string {
@@ -237,17 +259,20 @@ async function performLiveSearch(
 const BARISTA_SYSTEM_PROMPT = `You are Barista, the AI assistant for Monday Trade.
 
 CRITICAL RULES:
-1. MAX 2 sentences per response. Never more.
+1. MAX 3 sentences per response. Never more.
 2. One paragraph only. No sections, headers, or bullet lists.
 3. Answer only what was asked. No extra info.
 4. No emojis.
 5. If a user asks for a human, live support, or to speak with someone, direct them to the Monday Trade Discord: https://discord.com/invite/mondaytrade
+6. When LIVE FUNDING RATE DATA is provided in context, use the exact numbers from that data. State the current rate, whether the delta neutral strategy is favorable, and the projected annualized yield. Do not make up funding rate numbers.
+7. For delta neutral strategy questions: The strategy is buy MON on spot + short MON on perp at 1x leverage. When funding rate is positive, shorts earn fees from longs with zero price exposure. Always mention that rates change and past performance does not guarantee future returns.
 
 Examples:
 - Fees: "Perpetual futures: 0.02% taker, 0% maker. Spot: 0.03% taker, 0% maker."
 - Leverage: "Up to 10x leverage on BTC/USDC, ETH/USDC, and MON/USDC."
 - What is MT: "Monday Trade is a decentralized perps DEX on Monad with up to 10x leverage and no KYC."
-- Human support: "For human support, join the Monday Trade Discord at https://discord.com/invite/mondaytrade — the team responds there quickly."
+- Human support: "For human support, join the Monday Trade Discord at https://discord.com/invite/mondaytrade -- the team responds there quickly."
+- Delta neutral: "The delta neutral strategy on MON/USDC involves buying MON spot and shorting MON perp at 1x leverage, earning funding fees with zero price exposure. The current funding rate is [rate]%, projecting [apr]% annually."
 
 If unsure, say so briefly. For news check @MondayTrade_ on X. For prices see app.monday.trade.`;
 
@@ -301,7 +326,6 @@ export async function chatWithGrok(
       type: c.type as "docs" | "x" | "web",
     }));
     
-    // Deduplicate citations to avoid same URL appearing multiple times
     const citations = deduplicateCitations(rawCitations) as GrokResponse["citations"];
     
     return {
@@ -316,6 +340,16 @@ export async function chatWithGrok(
     
     if (ragContext) {
       systemPrompt += `\n\n## CONTEXT FROM DOCUMENTATION (check this first before searching)\n${ragContext}`;
+    }
+
+    const hasFundingQuery = isFundingQuery(message);
+    if (hasFundingQuery) {
+      const fundingContext = getFundingContextForChat();
+      if (fundingContext) {
+        systemPrompt += `\n\n## ${fundingContext}`;
+      } else {
+        systemPrompt += `\n\n## FUNDING RATE DATA: Not currently available. The Monday Trade API credentials may not be configured. Explain the delta neutral strategy conceptually but note that live rate data is unavailable right now.`;
+      }
     }
 
     const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
@@ -336,7 +370,7 @@ export async function chatWithGrok(
     const requestBody: any = {
       model: "grok-3",
       messages,
-      max_tokens: 150,
+      max_tokens: hasFundingQuery ? 250 : 150,
       temperature: 0.2,
     };
 
@@ -345,6 +379,9 @@ export async function chatWithGrok(
     const assistantMessage = response.choices[0]?.message;
     const content = assistantMessage?.content;
     const toolsUsed: Record<string, number> = {};
+    if (hasFundingQuery) {
+      toolsUsed.funding_rate = 1;
+    }
     const allCitations: GrokResponse["citations"] = [];
 
     if (!content) {
@@ -426,6 +463,17 @@ export async function streamChatWithGrok(
       toolsUsed.rag = 1;
     }
 
+    const hasFundingQuery = isFundingQuery(message);
+    if (hasFundingQuery) {
+      const fundingContext = getFundingContextForChat();
+      if (fundingContext) {
+        systemPrompt += `\n\n## ${fundingContext}`;
+      } else {
+        systemPrompt += `\n\n## FUNDING RATE DATA: Not currently available. The Monday Trade API credentials may not be configured. Explain the delta neutral strategy conceptually but note that live rate data is unavailable right now.`;
+      }
+      toolsUsed.funding_rate = 1;
+    }
+
     const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
       { role: "system", content: systemPrompt },
     ];
@@ -438,7 +486,7 @@ export async function streamChatWithGrok(
     const requestBody: any = {
       model: "grok-3",
       messages,
-      max_tokens: 150,
+      max_tokens: hasFundingQuery ? 250 : 150,
       temperature: 0.2,
       stream: true,
     };

@@ -1,13 +1,14 @@
 import { motion } from "framer-motion";
-import { X, Coffee, Sparkles } from "lucide-react";
+import { X, Coffee, Sparkles, TrendingUp } from "lucide-react";
 
 interface FloatingChatBubbleProps {
   isOpen: boolean;
   onClick: () => void;
   hasUnread?: boolean;
+  fundingFavorable?: boolean;
 }
 
-export function FloatingChatBubble({ isOpen, onClick, hasUnread = false }: FloatingChatBubbleProps) {
+export function FloatingChatBubble({ isOpen, onClick, hasUnread = false, fundingFavorable = false }: FloatingChatBubbleProps) {
   return (
     <motion.button
       type="button"
@@ -48,6 +49,31 @@ export function FloatingChatBubble({ isOpen, onClick, hasUnread = false }: Float
         )}
       </motion.div>
       
+      {fundingFavorable && !isOpen && (
+        <motion.span
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          className="absolute -top-1 -left-1 w-5 h-5 rounded-full flex items-center justify-center"
+          style={{ backgroundColor: "#14F195" }}
+          data-testid="funding-favorable-indicator"
+        >
+          <motion.span
+            animate={{
+              scale: [1, 1.4, 1],
+              opacity: [1, 0.6, 1],
+            }}
+            transition={{
+              duration: 2,
+              repeat: Infinity,
+              ease: "easeInOut",
+            }}
+            className="absolute inset-0 rounded-full"
+            style={{ backgroundColor: "#14F195" }}
+          />
+          <TrendingUp className="w-3 h-3 text-black relative z-10" />
+        </motion.span>
+      )}
+
       {hasUnread && !isOpen && (
         <motion.span
           initial={{ scale: 0 }}
