@@ -36,8 +36,11 @@ function sortQueryString(queryString: string): string {
   const pairs = queryString.split("&");
   const parsed: Array<[string, string]> = pairs.map(pair => {
     const eqIndex = pair.indexOf("=");
-    if (eqIndex === -1) return [pair, ""];
-    return [pair.substring(0, eqIndex), pair.substring(eqIndex + 1)];
+    if (eqIndex === -1) return [decodeURIComponent(pair), ""];
+    return [
+      decodeURIComponent(pair.substring(0, eqIndex)),
+      decodeURIComponent(pair.substring(eqIndex + 1)),
+    ];
   });
   parsed.sort((a, b) => a[0].localeCompare(b[0]));
   return parsed.map(([k, v]) => `${k}=${v}`).join("&");
@@ -98,14 +101,15 @@ export async function fetchFundingRateHistory(symbol: string = "MON/USDC"): Prom
     return null;
   }
 
-  const path = `/v4/public/mm/funding/history?symbol=${encodeURIComponent(symbol)}`;
+  const path = `/v4/public/trader/market/funding/history?symbol=${encodeURIComponent(symbol)}`;
   const headers = getHeaders(config, "GET", path);
 
   try {
     const response = await fetch(`${BASE_URL}${path}`, { headers, signal: AbortSignal.timeout(10000) });
 
     if (!response.ok) {
-      console.error(`[MONDAY API] Funding rate request failed: ${response.status}`);
+      const errorBody = await response.text();
+      console.error(`[MONDAY API] Funding rate request failed: ${response.status} - ${errorBody}`);
       return null;
     }
 
