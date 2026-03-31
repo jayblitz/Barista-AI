@@ -59,6 +59,26 @@ interface TradeSubmitResult {
   txHash?: string;
 }
 
+interface ClosePositionRequest {
+  instrument: string;
+  expiry: number;
+  size: string;
+  leverage: number;
+  slippageBps: number;
+  referralCode?: string;
+  deadline: number;
+  gasLimit?: number;
+}
+
+interface TraderPosition {
+  size: string;
+  balance: string;
+  entryNotional: string;
+  side: number;
+  symbol: string;
+  expiry: number;
+}
+
 export interface ParsedOrderIntent {
   type: "market" | "limit";
   side: 1 | 2;
@@ -69,6 +89,15 @@ export interface ParsedOrderIntent {
   price?: string;
 }
 
+export interface ParsedCloseIntent {
+  type: "close";
+  instrument: string;
+  size: string;
+  leverage: string;
+}
+
+export type ParsedTradeIntent = ParsedOrderIntent | ParsedCloseIntent;
+
 export interface ChatOrderResult {
   ok: boolean;
   message: string;
@@ -76,6 +105,8 @@ export interface ChatOrderResult {
   requestId?: string;
   errorCode?: number;
 }
+
+const SIZE_DECIMALS = Number(process.env.MONDAY_SIZE_DECIMALS || "18");
 
 function getConfig(): MondayApiConfig | null {
   const apiKey = process.env.MONDAY_API_KEY;
@@ -390,6 +421,125 @@ export async function createLimitOrder(params: LimitOrderRequest): Promise<ChatO
   };
 }
 
+function fromScaledInteger(value: string, decimals: number): string {
+  try {
+    const raw = BigInt(value || "0");
+    const base = BigInt(10) ** BigInt(decimals);
+    const whole = raw / base;
+    const frac = raw % base;
+    if (frac === 0n) return whole.toString();
+    const fracStr = frac.toString().padStart(decimals, "0").replace(/0+$/, "");
+    return `${whole.toString()}.${fracStr}`;
+  } catch {
+    return "0";
+  }
+}
+
+function estimateLeverage(position: TraderPosition): number {
+  try {
+    const notional = BigInt(position.entryNotional || "0");
+    const margin = BigInt(position.balance || "0");
+    if (margin <= 0n) return 1;
+    const lev = Number(notional / margin);
+    if (!Number.isFinite(lev) || lev <= 0) return 1;
+    return Math.max(1, Math.min(10, lev));
+  } catch {
+    return 1;
+  }
+}
+
+async function fetchOpenPositions(): Promise<TraderPosition[] | null> {
+  const result = await callSignedEndpoint<TraderPosition[]>(
+    "get_position_list",
+    "GET",
+    "/v4/public/trader/position/list",
+  );
+  if (!result.ok || !result.json) {
+    return null;
+  }
+  return (result.json.data || []).filter((p) => p.side !== 0 && p.size && p.size !== "0");
+}
+
+export async function prepareCloseIntent(message: string): Promise<{ intent: ParsedCloseIntent | null; error?: string } | null> {
+  const text = message.trim().toLowerCase();
+  const isCloseIntent = /\bclose\b/.test(text) && /\bposition\b/.test(text);
+  if (!isCloseIntent) {
+    return null;
+  }
+
+  const symbolMatch = text.match(/\b(btc|eth|mon)(?:\/usdc)?\b/i);
+  const requestedSymbol = symbolMatch ? `${symbolMatch[1].toUpperCase()}/USDC` : null;
+
+  const positions = await fetchOpenPositions();
+  if (!positions || positions.length === 0) {
+    return {
+      intent: null,
+      error: "No open positions found to close.",
+    };
+  }
+
+  const matching = requestedSymbol
+    ? positions.filter((p) => p.symbol.toUpperCase() === requestedSymbol)
+    : positions;
+
+  if (matching.length === 0) {
+    return {
+      intent: null,
+      error: requestedSymbol
+        ? `No open ${requestedSymbol} position found to close.`
+        : "No matching open position found to close.",
+    };
+  }
+
+  if (!requestedSymbol && matching.length > 1) {
+    const symbols = matching.map((p) => p.symbol).join(", ");
+    return {
+      intent: null,
+      error: `You have multiple open positions (${symbols}). Specify which one to close, e.g. "Close BTC position".`,
+    };
+  }
+
+  const position = matching[0];
+  const size = fromScaledInteger(position.size, SIZE_DECIMALS);
+  const leverage = String(estimateLeverage(position));
+
+  return {
+    intent: {
+      type: "close",
+      instrument: position.symbol,
+      size,
+      leverage,
+    },
+  };
+}
+
+export async function closePosition(params: ClosePositionRequest): Promise<ChatOrderResult> {
+  const path = "/v4/public/trader/position/close";
+  const result = await callSignedEndpoint<TradeSubmitResult>(
+    "close_position",
+    "POST",
+    path,
+    params as unknown as Record<string, unknown>,
+  );
+
+  if (!result.ok || !result.json) {
+    const apiMessage = result.json?.msg || result.json?.message;
+    return {
+      ok: false,
+      message: apiMessage || "Failed to close position",
+      requestId: result.json?.requestId,
+      errorCode: result.json?.code ?? result.status,
+    };
+  }
+
+  return {
+    ok: true,
+    message: "Position close submitted successfully.",
+    txHash: result.json.data?.txHash,
+    requestId: result.json.requestId,
+  };
+}
+
 export async function executeOrderFromChat(message: string): Promise<ChatOrderResult | null> {
   const intent = parseOrderIntent(message);
   if (!intent) {
@@ -438,7 +588,7 @@ export async function executeOrderFromChat(message: string): Promise<ChatOrderRe
   });
 }
 
-export async function submitParsedOrderIntent(intent: ParsedOrderIntent): Promise<ChatOrderResult> {
+export async function submitParsedOrderIntent(intent: ParsedTradeIntent): Promise<ChatOrderResult> {
   const isEnabled = process.env.MONDAY_ENABLE_CHAT_TRADING === "true";
   if (!isEnabled) {
     return {
@@ -463,6 +613,20 @@ export async function submitParsedOrderIntent(intent: ParsedOrderIntent): Promis
       slippageBps: Number.isFinite(slippageBps) ? slippageBps : 10,
       deadline,
       gasLimit,
+    });
+  }
+
+  if (intent.type === "close") {
+    const slippageBps = Number(process.env.MONDAY_DEFAULT_SLIPPAGE_BPS || "10");
+    const deadline = Math.floor(Date.now() / 1000) + 3600;
+    return closePosition({
+      instrument: intent.instrument,
+      expiry: 4294967295,
+      size: intent.size,
+      leverage: Number(intent.leverage),
+      slippageBps: Number.isFinite(slippageBps) ? slippageBps : 10,
+      deadline,
+      gasLimit: 0,
     });
   }
 

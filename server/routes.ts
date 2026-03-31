@@ -6,7 +6,7 @@ import { queryKnowledge, healthCheck as ragHealthCheck, isConfigured as isRagCon
 import { getCachedResponse, setCachedResponse, healthCheck as cacheHealthCheck, isConfigured as isCacheConfigured } from "./services/cache";
 import { startFundingMonitor, getFundingStatus } from "./services/fundingMonitor";
 import { isConfigured as isMondayApiConfigured } from "./services/mondayApi";
-import { parseOrderIntent, submitParsedOrderIntent, type ParsedOrderIntent } from "./services/mondayApi";
+import { parseOrderIntent, prepareCloseIntent, submitParsedOrderIntent, type ParsedTradeIntent } from "./services/mondayApi";
 import { chatRequestSchema, feedbackSchema, type SuggestionPill, type ChatResponse } from "@shared/schema";
 
 const SUGGESTIONS: SuggestionPill[] = [
@@ -21,7 +21,7 @@ const SUGGESTIONS: SuggestionPill[] = [
 ];
 
 const ORDER_CONFIRMATION_WINDOW_MS = 2 * 60 * 1000;
-const pendingOrderBySession = new Map<string, { intent: ParsedOrderIntent; createdAt: number }>();
+const pendingOrderBySession = new Map<string, { intent: ParsedTradeIntent; createdAt: number }>();
 
 function isConfirmMessage(message: string): boolean {
   const normalized = message.trim().toLowerCase();
@@ -42,12 +42,48 @@ function pruneExpiredPendingOrders() {
   });
 }
 
-function formatOrderPreview(intent: ParsedOrderIntent): string {
-  const base = `${intent.type.toUpperCase()} ${intent.sideLabel} ${intent.size} ${intent.instrument} ${intent.leverage}x`;
-  if (intent.type === "limit") {
-    return `${base} at ${intent.price}`;
+function formatOrderPreview(intent: ParsedTradeIntent): string {
+  if (intent.type === "close") {
+    return [
+      "Trade Preview",
+      "------------",
+      `Action: CLOSE_POSITION`,
+      `Product: ${intent.instrument}`,
+      `Size: ${intent.size}`,
+      `Leverage: ${intent.leverage}x`,
+      "",
+      "Type CONFIRM to execute or CANCEL to discard.",
+    ].join("\n");
   }
-  return base;
+
+  const action = intent.type === "limit" ? `LIMIT_${intent.sideLabel}` : `MARKET_${intent.sideLabel}`;
+  const lines = [
+    "Trade Preview",
+    "------------",
+    `Action: ${action}`,
+    `Product: ${intent.instrument}`,
+    `Size: ${intent.size}`,
+    intent.type === "limit" ? `Price: ${intent.price}` : null,
+    `Leverage: ${intent.leverage}x`,
+    "",
+    "Type CONFIRM to execute or CANCEL to discard.",
+  ].filter(Boolean) as string[];
+  return lines.join("\n");
+}
+
+function formatExecutionResult(intent: ParsedTradeIntent, txHash?: string): string {
+  const lines = [
+    intent.type === "close" ? "Position close submitted" : `${intent.type.toUpperCase()} order submitted`,
+    "------------",
+    `Type: ${intent.type.toUpperCase()}`,
+    intent.type === "close" ? null : `Side: ${intent.sideLabel}`,
+    `Product: ${intent.instrument}`,
+    `Size: ${intent.size}`,
+    intent.type === "limit" ? `Limit price: ${intent.price}` : null,
+    `Leverage: ${intent.leverage}x`,
+    txHash ? `TxHash: ${txHash}` : null,
+  ].filter(Boolean) as string[];
+  return lines.join("\n");
 }
 
 export async function registerRoutes(
@@ -110,7 +146,7 @@ export async function registerRoutes(
           pendingOrderBySession.delete(currentSessionId);
           const chatOrderResult = await submitParsedOrderIntent(pendingOrder.intent);
           const orderText = chatOrderResult.ok
-            ? `${chatOrderResult.message}${chatOrderResult.txHash ? ` TxHash: ${chatOrderResult.txHash}` : ""}`
+            ? formatExecutionResult(pendingOrder.intent, chatOrderResult.txHash)
             : `${chatOrderResult.message}${chatOrderResult.errorCode ? ` (code: ${chatOrderResult.errorCode})` : ""}${chatOrderResult.requestId ? ` [requestId: ${chatOrderResult.requestId}]` : ""}`;
           const response: ChatResponse = {
             response: orderText,
@@ -142,6 +178,32 @@ export async function registerRoutes(
         return;
       }
 
+      const closeIntentResult = await prepareCloseIntent(message);
+      if (closeIntentResult) {
+        if (!closeIntentResult.intent) {
+          res.json({
+            response: closeIntentResult.error || "Could not prepare close-position request.",
+            citations: [],
+            toolsUsed: { monday_order_error: 1 },
+            sessionId: currentSessionId,
+          } satisfies ChatResponse);
+          return;
+        }
+
+        pendingOrderBySession.set(currentSessionId, {
+          intent: closeIntentResult.intent,
+          createdAt: Date.now(),
+        });
+
+        res.json({
+          response: formatOrderPreview(closeIntentResult.intent),
+          citations: [],
+          toolsUsed: { monday_order: 1 },
+          sessionId: currentSessionId,
+        } satisfies ChatResponse);
+        return;
+      }
+
       const parsedIntent = parseOrderIntent(message);
       if (parsedIntent) {
         pendingOrderBySession.set(currentSessionId, {
@@ -149,9 +211,8 @@ export async function registerRoutes(
           createdAt: Date.now(),
         });
 
-        const preview = formatOrderPreview(parsedIntent);
         res.json({
-          response: `Order preview: ${preview}. Reply "CONFIRM" within 2 minutes to place this order, or "CANCEL" to discard it.`,
+          response: formatOrderPreview(parsedIntent),
           citations: [],
           toolsUsed: { monday_order: 1 },
           sessionId: currentSessionId,
@@ -185,6 +246,9 @@ export async function registerRoutes(
       const ragContext = await queryKnowledge(message);
 
       const grokResponse = await chatWithGrok(message, history, ragContext || undefined);
+      const normalizedGrokContent = /^order preview:/i.test(grokResponse.content.trim())
+        ? "If you want to execute a trade, use explicit commands like \"Long 0.001 BTC 10x\", \"Short 0.001 ETH 5x at 2500\", or \"Close BTC position\"."
+        : grokResponse.content;
 
       // Do not cache live search results — they are time-sensitive
       if (history.length === 0 && !grokResponse.toolsUsed.live_search) {
@@ -192,7 +256,7 @@ export async function registerRoutes(
       }
 
       const response: ChatResponse = {
-        response: grokResponse.content,
+        response: normalizedGrokContent,
         citations: grokResponse.citations,
         toolsUsed: {
           ...grokResponse.toolsUsed,
