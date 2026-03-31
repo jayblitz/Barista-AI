@@ -1,10 +1,14 @@
 import { Pinecone } from "@pinecone-database/pinecone";
 
 const PINECONE_INDEX_NAME = process.env.PINECONE_INDEX || "barista-knowledge";
+const PINECONE_CLOUD = process.env.PINECONE_CLOUD || "aws";
+const PINECONE_REGION = process.env.PINECONE_REGION || "us-east-1";
+const PINECONE_DIMENSION = 1536;
 const TOP_K = 5;
 const MIN_SCORE = 0.7;
 
 let pineconeClient: Pinecone | null = null;
+let ensureIndexPromise: Promise<boolean> | null = null;
 
 const MANUAL_KNOWLEDGE = [
   {
@@ -414,6 +418,72 @@ function getPineconeClient(): Pinecone | null {
   }
 
   return pineconeClient;
+}
+
+async function waitForIndexReady(pinecone: Pinecone, maxWaitMs = 120000): Promise<boolean> {
+  const start = Date.now();
+  while (Date.now() - start < maxWaitMs) {
+    try {
+      const info = await pinecone.describeIndex(PINECONE_INDEX_NAME);
+      if (info.status?.ready) {
+        return true;
+      }
+    } catch {
+      // Ignore transient describe failures while index propagates.
+    }
+    await new Promise((resolve) => setTimeout(resolve, 3000));
+  }
+  return false;
+}
+
+export async function ensurePineconeIndex(): Promise<boolean> {
+  if (ensureIndexPromise) {
+    return ensureIndexPromise;
+  }
+
+  ensureIndexPromise = (async () => {
+    const pinecone = getPineconeClient();
+    if (!pinecone) {
+      return false;
+    }
+
+    try {
+      const list = await pinecone.listIndexes();
+      const exists = (list.indexes || []).some((index) => index.name === PINECONE_INDEX_NAME);
+
+      if (!exists) {
+        console.log(
+          `[PINECONE] Creating index "${PINECONE_INDEX_NAME}" (${PINECONE_DIMENSION}d, cosine, ${PINECONE_CLOUD}/${PINECONE_REGION})`
+        );
+
+        await pinecone.createIndex({
+          name: PINECONE_INDEX_NAME,
+          dimension: PINECONE_DIMENSION,
+          metric: "cosine",
+          spec: {
+            serverless: {
+              cloud: PINECONE_CLOUD as "aws" | "gcp" | "azure",
+              region: PINECONE_REGION,
+            },
+          },
+          deletionProtection: "disabled",
+        });
+      }
+
+      const ready = await waitForIndexReady(pinecone);
+      if (ready) {
+        console.log(`[PINECONE] Index "${PINECONE_INDEX_NAME}" is ready`);
+      } else {
+        console.warn(`[PINECONE] Index "${PINECONE_INDEX_NAME}" is not ready yet`);
+      }
+      return ready;
+    } catch (error) {
+      console.error("[ERROR] Failed to ensure Pinecone index:", error);
+      return false;
+    }
+  })();
+
+  return ensureIndexPromise;
 }
 
 async function generateEmbedding(text: string): Promise<number[] | null> {

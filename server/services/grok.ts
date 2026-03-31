@@ -169,6 +169,36 @@ function deduplicateCitations(
   });
 }
 
+function buildLocalFallbackResponse(message: string, ragContext?: string): string {
+  const lower = message.toLowerCase();
+  const asksOrderFlow =
+    lower.includes("order") ||
+    lower.includes("buy") ||
+    lower.includes("sell") ||
+    lower.includes("trade");
+
+  if (asksOrderFlow) {
+    return "To place an order on Monday Trade, connect your wallet at app.monday.trade, choose your market, then place either a market order for immediate execution or a limit order at your target price. Review slippage and margin before confirming the on-chain transaction, and use stop-loss/take-profit to manage risk after entry.";
+  }
+
+  if (ragContext) {
+    // Keep fallback concise and deterministic when LLM is unavailable.
+    const compact = ragContext
+      .replace(/\r/g, "")
+      .split("\n")
+      .map((line) => line.trim())
+      .filter((line) => line && !line.startsWith("---"))
+      .slice(0, 6)
+      .join(" ");
+
+    if (compact) {
+      return truncateToTwoSentences(stripMarkdown(compact));
+    }
+  }
+
+  return "I can still help with Monday Trade docs-based guidance, but the live AI service is currently unavailable. Please try again shortly or visit docs.monday.trade for full details.";
+}
+
 async function performLiveSearch(
   query: string,
   searchType: "x" | "web" | "both" = "x",
@@ -305,9 +335,9 @@ export async function chatWithGrok(
 
   if (!client) {
     return {
-      content: "I'm having trouble connecting right now. Please try again or visit docs.monday.trade for help.",
+      content: buildLocalFallbackResponse(message, ragContext),
       citations: [],
-      toolsUsed: { error: 1 },
+      toolsUsed: { fallback: 1 },
     };
   }
 
@@ -424,11 +454,12 @@ export async function streamChatWithGrok(
   const citations: GrokResponse["citations"] = [];
 
   if (!client) {
-    onChunk("I'm having trouble connecting. Please try again or visit docs.monday.trade");
+    const fallback = buildLocalFallbackResponse(message, ragContext);
+    onChunk(fallback);
     return {
-      content: "I'm having trouble connecting. Please try again or visit docs.monday.trade",
+      content: fallback,
       citations: [],
-      toolsUsed: { error: 1 },
+      toolsUsed: { fallback: 1 },
     };
   }
 

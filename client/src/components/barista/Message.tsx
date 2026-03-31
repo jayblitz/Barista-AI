@@ -58,6 +58,8 @@ export function Message({ message, onFeedback }: MessageProps) {
     if (message.toolsUsed.x_search) tools.push("X Search");
     if (message.toolsUsed.funding_rate) tools.push("Funding Rate");
     if (message.toolsUsed.rag) tools.push("Docs");
+    if (message.toolsUsed.monday_order) tools.push("Order Execution");
+    if (message.toolsUsed.monday_order_error) tools.push("Order Error");
     if (tools.length === 0) return null;
     return tools.join(" • ");
   };

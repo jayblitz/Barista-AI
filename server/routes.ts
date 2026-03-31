@@ -2,10 +2,11 @@ import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { randomUUID } from "crypto";
 import { chatWithGrok, streamChatWithGrok, isConfigured as isGrokConfigured } from "./services/grok";
-import { queryKnowledge, healthCheck as ragHealthCheck, isConfigured as isRagConfigured } from "./services/vectorStore";
+import { queryKnowledge, healthCheck as ragHealthCheck, isConfigured as isRagConfigured, ensurePineconeIndex } from "./services/vectorStore";
 import { getCachedResponse, setCachedResponse, healthCheck as cacheHealthCheck, isConfigured as isCacheConfigured } from "./services/cache";
 import { startFundingMonitor, getFundingStatus } from "./services/fundingMonitor";
 import { isConfigured as isMondayApiConfigured } from "./services/mondayApi";
+import { parseOrderIntent, submitParsedOrderIntent, type ParsedOrderIntent } from "./services/mondayApi";
 import { chatRequestSchema, feedbackSchema, type SuggestionPill, type ChatResponse } from "@shared/schema";
 
 const SUGGESTIONS: SuggestionPill[] = [
@@ -19,10 +20,42 @@ const SUGGESTIONS: SuggestionPill[] = [
   { text: "Supported wallets?" },
 ];
 
+const ORDER_CONFIRMATION_WINDOW_MS = 2 * 60 * 1000;
+const pendingOrderBySession = new Map<string, { intent: ParsedOrderIntent; createdAt: number }>();
+
+function isConfirmMessage(message: string): boolean {
+  const normalized = message.trim().toLowerCase();
+  return normalized === "confirm" || normalized === "yes" || normalized === "yes confirm";
+}
+
+function isCancelMessage(message: string): boolean {
+  const normalized = message.trim().toLowerCase();
+  return normalized === "cancel" || normalized === "abort" || normalized === "never mind";
+}
+
+function pruneExpiredPendingOrders() {
+  const now = Date.now();
+  pendingOrderBySession.forEach((pending, sessionId) => {
+    if (now - pending.createdAt > ORDER_CONFIRMATION_WINDOW_MS) {
+      pendingOrderBySession.delete(sessionId);
+    }
+  });
+}
+
+function formatOrderPreview(intent: ParsedOrderIntent): string {
+  const base = `${intent.type.toUpperCase()} ${intent.sideLabel} ${intent.size} ${intent.instrument} ${intent.leverage}x`;
+  if (intent.type === "limit") {
+    return `${base} at ${intent.price}`;
+  }
+  return base;
+}
+
 export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
+  // Create the index in app initialization if credentials are available.
+  void ensurePineconeIndex();
   
   app.get("/api/health", async (_req: Request, res: Response) => {
     const [cacheStatus, ragStatus] = await Promise.all([
@@ -68,6 +101,74 @@ export async function registerRoutes(
 
       const { message, history, sessionId } = parseResult.data;
       const currentSessionId = sessionId || randomUUID();
+
+      pruneExpiredPendingOrders();
+
+      const pendingOrder = pendingOrderBySession.get(currentSessionId);
+      if (pendingOrder) {
+        if (isConfirmMessage(message)) {
+          pendingOrderBySession.delete(currentSessionId);
+          const chatOrderResult = await submitParsedOrderIntent(pendingOrder.intent);
+          const orderText = chatOrderResult.ok
+            ? `${chatOrderResult.message}${chatOrderResult.txHash ? ` TxHash: ${chatOrderResult.txHash}` : ""}`
+            : `${chatOrderResult.message}${chatOrderResult.errorCode ? ` (code: ${chatOrderResult.errorCode})` : ""}${chatOrderResult.requestId ? ` [requestId: ${chatOrderResult.requestId}]` : ""}`;
+          const response: ChatResponse = {
+            response: orderText,
+            citations: [],
+            toolsUsed: chatOrderResult.ok ? { monday_order: 1 } : { monday_order_error: 1 },
+            sessionId: currentSessionId,
+          };
+          res.json(response);
+          return;
+        }
+
+        if (isCancelMessage(message)) {
+          pendingOrderBySession.delete(currentSessionId);
+          res.json({
+            response: "Pending order canceled. Send a new order instruction anytime.",
+            citations: [],
+            toolsUsed: { monday_order: 1 },
+            sessionId: currentSessionId,
+          } satisfies ChatResponse);
+          return;
+        }
+
+        res.json({
+          response: 'You have a pending order preview. Reply "CONFIRM" to place it or "CANCEL" to discard it.',
+          citations: [],
+          toolsUsed: { monday_order: 1 },
+          sessionId: currentSessionId,
+        } satisfies ChatResponse);
+        return;
+      }
+
+      const parsedIntent = parseOrderIntent(message);
+      if (parsedIntent) {
+        pendingOrderBySession.set(currentSessionId, {
+          intent: parsedIntent,
+          createdAt: Date.now(),
+        });
+
+        const preview = formatOrderPreview(parsedIntent);
+        res.json({
+          response: `Order preview: ${preview}. Reply "CONFIRM" within 2 minutes to place this order, or "CANCEL" to discard it.`,
+          citations: [],
+          toolsUsed: { monday_order: 1 },
+          sessionId: currentSessionId,
+        } satisfies ChatResponse);
+        return;
+      }
+
+      if (isConfirmMessage(message)) {
+        const response: ChatResponse = {
+          response: 'No pending order found. Send an order instruction first, e.g. "Long 0.001 BTC 10x".',
+          citations: [],
+          toolsUsed: { monday_order_error: 1 },
+          sessionId: currentSessionId,
+        };
+        res.json(response);
+        return;
+      }
 
       const cachedResponse = await getCachedResponse(message);
       if (cachedResponse && history.length === 0) {

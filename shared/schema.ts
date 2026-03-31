@@ -35,6 +35,9 @@ export interface ToolsUsed {
   x_search?: number;
   rag?: number;
   funding_rate?: number;
+  monday_order?: number;
+  monday_order_error?: number;
+  fallback?: number;
 }
 
 export interface FundingStatusResponse {
